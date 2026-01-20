@@ -18,7 +18,9 @@ use std::io;
 fn main() -> Result<()> {
     // Check for delta before starting
     if !git::diff::delta_available() {
-        anyhow::bail!("delta is required but not found in PATH. Please install delta: https://github.com/dandavison/delta");
+        anyhow::bail!(
+            "delta is required but not found in PATH. Please install delta: https://github.com/dandavison/delta"
+        );
     }
 
     // Initialize terminal

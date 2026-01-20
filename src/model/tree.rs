@@ -93,8 +93,7 @@ impl FileTree {
 
     /// Build a FileTree from a list of files (used for commit file views)
     pub fn from_commit_files(files: Vec<(PathBuf, FileStatus)>) -> Self {
-        let file_statuses: HashMap<PathBuf, FileStatus> =
-            files.iter().cloned().collect();
+        let file_statuses: HashMap<PathBuf, FileStatus> = files.iter().cloned().collect();
         Self::from_files(files, file_statuses)
     }
 
@@ -157,12 +156,10 @@ impl FileTree {
     }
 
     fn sort_tree(nodes: &mut Vec<TreeNode>) {
-        nodes.sort_by(|a, b| {
-            match (a.is_dir, b.is_dir) {
-                (true, false) => std::cmp::Ordering::Less,
-                (false, true) => std::cmp::Ordering::Greater,
-                _ => a.name.cmp(&b.name),
-            }
+        nodes.sort_by(|a, b| match (a.is_dir, b.is_dir) {
+            (true, false) => std::cmp::Ordering::Less,
+            (false, true) => std::cmp::Ordering::Greater,
+            _ => a.name.cmp(&b.name),
         });
         for node in nodes {
             Self::sort_tree(&mut node.children);
@@ -260,13 +257,9 @@ impl FileTree {
     }
 
     pub fn selected_file_path(&self) -> Option<PathBuf> {
-        self.flat_list.get(self.selected_index).and_then(|n| {
-            if n.is_dir {
-                None
-            } else {
-                Some(n.path.clone())
-            }
-        })
+        self.flat_list
+            .get(self.selected_index)
+            .and_then(|n| if n.is_dir { None } else { Some(n.path.clone()) })
     }
 
     /// Returns the selected path (file or folder)

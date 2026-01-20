@@ -61,7 +61,11 @@ fn build_title(state: &DiffState, commit: Option<&CommitInfo>) -> String {
         return format!(" {}: {} ", c.oid, msg);
     }
 
-    let staged_label = if state.showing_staged { "staged" } else { "unstaged" };
+    let staged_label = if state.showing_staged {
+        "staged"
+    } else {
+        "unstaged"
+    };
     let toggle_hint = if state.has_both { " [s to toggle]" } else { "" };
 
     if state.showing_staged || state.has_both {

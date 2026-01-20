@@ -208,7 +208,9 @@ pub fn get_commit_file_diff(
     let repo_path = repo_path.to_path_buf();
     let oid = oid.to_string();
     let file_path = file_path.to_path_buf();
-    spawn_diff(move || get_commit_file_diff_sync(&repo_path, &oid, &file_path, width, delta_args.as_deref()))
+    spawn_diff(move || {
+        get_commit_file_diff_sync(&repo_path, &oid, &file_path, width, delta_args.as_deref())
+    })
 }
 
 fn get_commit_file_diff_sync(
@@ -239,7 +241,9 @@ pub fn get_commit_files_diff(
     let repo_path = repo_path.to_path_buf();
     let oid = oid.to_string();
     let file_paths = file_paths.to_vec();
-    spawn_diff(move || get_commit_files_diff_sync(&repo_path, &oid, &file_paths, width, delta_args.as_deref()))
+    spawn_diff(move || {
+        get_commit_files_diff_sync(&repo_path, &oid, &file_paths, width, delta_args.as_deref())
+    })
 }
 
 fn get_commit_files_diff_sync(

@@ -16,10 +16,7 @@ pub fn create_layout(area: Rect, show_tree: bool, file_tree: &FileTree) -> Areas
 
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Length(tree_width),
-                Constraint::Min(1),
-            ])
+            .constraints([Constraint::Length(tree_width), Constraint::Min(1)])
             .split(area);
 
         Areas {

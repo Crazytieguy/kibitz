@@ -8,7 +8,13 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem},
 };
 
-pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree, colors: &ColorConfig, commit: Option<&CommitInfo>) {
+pub fn render(
+    frame: &mut Frame,
+    area: Rect,
+    tree: &FileTree,
+    colors: &ColorConfig,
+    commit: Option<&CommitInfo>,
+) {
     let visible = tree.visible_items();
     let items: Vec<ListItem> = visible
         .iter()
@@ -23,7 +29,9 @@ pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree, colors: &ColorConf
                 spans.push(Span::styled(icon, Style::default().fg(colors.folder)));
                 spans.push(Span::styled(
                     node.name.as_str(),
-                    Style::default().fg(colors.folder).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(colors.folder)
+                        .add_modifier(Modifier::BOLD),
                 ));
             } else {
                 let (icon, icon_color) = match node.status {
@@ -60,8 +68,7 @@ pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree, colors: &ColorConf
         None => " Changes ".to_string(),
     };
 
-    let list = List::new(items)
-        .block(Block::default().borders(Borders::RIGHT).title(title));
+    let list = List::new(items).block(Block::default().borders(Borders::RIGHT).title(title));
 
     frame.render_widget(list, area);
 }

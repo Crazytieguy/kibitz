@@ -10,5 +10,6 @@ See @README.md for project details. Always update README.md when project details
 ## Rules
 
 - Use `cargo add` to add dependencies to get latest versions.
-- Always use `cargo clippy` and fix all issues before commiting
+- Always use `cargo clippy` and fix all issues before committing
+- Run `cargo fmt` before committing (after clippy passes)
 - Edition 2024 is correct

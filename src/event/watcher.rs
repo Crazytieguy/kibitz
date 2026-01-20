@@ -16,9 +16,9 @@ impl FileWatcher {
             move |res: Result<Vec<DebouncedEvent>, notify::Error>| {
                 if let Ok(events) = res {
                     // Filter for relevant events
-                    let has_relevant = events.iter().any(|e| {
-                        matches!(e.kind, DebouncedEventKind::Any)
-                    });
+                    let has_relevant = events
+                        .iter()
+                        .any(|e| matches!(e.kind, DebouncedEventKind::Any));
                     if has_relevant {
                         let _ = tx.send(());
                     }

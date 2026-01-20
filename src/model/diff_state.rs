@@ -6,8 +6,8 @@ pub struct DiffState {
     pub hunk_positions: Vec<usize>,
     pub current_hunk: usize,
     pub total_lines: usize,
-    pub has_both: bool,        // Has both staged and unstaged changes
-    pub showing_staged: bool,  // Currently showing staged diff
+    pub has_both: bool,       // Has both staged and unstaged changes
+    pub showing_staged: bool, // Currently showing staged diff
 }
 
 impl DiffState {

@@ -53,7 +53,10 @@ impl App {
         Ok(app)
     }
 
-    pub fn run(&mut self, terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>) -> Result<()> {
+    pub fn run(
+        &mut self,
+        terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
+    ) -> Result<()> {
         // Get initial size and load first diff
         let size = terminal.size()?;
         self.terminal_size = (size.width, size.height);
