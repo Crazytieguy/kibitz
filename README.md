@@ -64,6 +64,7 @@ All navigation uses `j`/`k` with modifiers:
 
 ## Planned Features
 
+- **Commit history navigation** - When no uncommitted changes exist, show diffs from recent commits; navigate through commit history
 - **Configuration file** - TOML config for delta args, keybindings, colors
 - **CLI options** - Override config via command line (`--delta-args`, etc.)
 - **Theme hot-reload** - Respond to terminal theme change signals (SIGUSR1)

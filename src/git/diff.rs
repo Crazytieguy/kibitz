@@ -1,6 +1,7 @@
 use crate::model::{DiffState, FileStatus};
 use ansi_to_tui::IntoText;
 use anyhow::Result;
+use ratatui::text::Text;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::mpsc;
@@ -81,12 +82,15 @@ fn get_diff_sync(req: &DiffRequest) -> Result<DiffState> {
     let content = stdout.into_text().unwrap_or_default();
     let total_lines = content.lines.len();
 
+    // Find hunk positions by looking for delta's file headers (Δ) or hunk markers (•)
+    let hunk_positions = find_hunk_positions(&content);
+
     let has_both = req.status.map(|s| s.has_both()).unwrap_or(false);
 
     Ok(DiffState {
         content,
         scroll_offset: 0,
-        hunk_positions: Vec::new(),
+        hunk_positions,
         current_hunk: 0,
         total_lines,
         has_both,
@@ -154,6 +158,24 @@ fn filter_control_chars(input: &[u8]) -> Vec<u8> {
     }
 
     result
+}
+
+/// Find hunk positions in delta output by looking for file headers (Δ) or hunk markers (•)
+fn find_hunk_positions(content: &Text) -> Vec<usize> {
+    let mut positions = Vec::new();
+
+    for (i, line) in content.lines.iter().enumerate() {
+        // Get the raw text content of the line
+        let text: String = line.spans.iter().map(|s| s.content.as_ref()).collect();
+        let trimmed = text.trim_start();
+
+        // Delta uses "Δ" (U+0394) for file headers and "•" (U+2022) for hunk markers
+        if trimmed.starts_with('Δ') || trimmed.starts_with('•') {
+            positions.push(i);
+        }
+    }
+
+    positions
 }
 
 fn build_diff_command(req: &DiffRequest) -> String {
@@ -277,11 +299,12 @@ fn get_multi_diff_sync(
     let stdout = filter_control_chars(&output.stdout);
     let content = stdout.into_text().unwrap_or_default();
     let total_lines = content.lines.len();
+    let hunk_positions = find_hunk_positions(&content);
 
     Ok(DiffState {
         content,
         scroll_offset: 0,
-        hunk_positions: Vec::new(),
+        hunk_positions,
         current_hunk: 0,
         total_lines,
         has_both: false,
