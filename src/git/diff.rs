@@ -224,3 +224,67 @@ pub fn get_diff_staged(
         staged,
     })
 }
+
+/// Get combined diff for multiple files (used for folder diffs)
+pub fn get_diff_for_paths(
+    repo_path: &Path,
+    file_paths: &[std::path::PathBuf],
+    width: usize,
+) -> mpsc::Receiver<DiffState> {
+    let (tx, rx) = mpsc::channel();
+    let repo_path = repo_path.to_path_buf();
+    let file_paths: Vec<_> = file_paths.to_vec();
+
+    thread::spawn(move || {
+        let result = get_multi_diff_sync(&repo_path, &file_paths, width);
+        let _ = tx.send(result.unwrap_or_default());
+    });
+
+    rx
+}
+
+fn get_multi_diff_sync(
+    repo_path: &Path,
+    file_paths: &[std::path::PathBuf],
+    width: usize,
+) -> Result<DiffState> {
+    if file_paths.is_empty() {
+        return Ok(DiffState::new());
+    }
+
+    // Build a command that diffs all files at once
+    let features = delta_features();
+    let files_arg: Vec<_> = file_paths
+        .iter()
+        .map(|p| format!("'{}'", p.to_string_lossy()))
+        .collect();
+
+    let diff_cmd = format!(
+        "git diff --color=always -- {} | delta --paging=never {}",
+        files_arg.join(" "),
+        features
+    );
+
+    let output = Command::new("script")
+        .args(["-q", "/dev/null", "sh", "-c", &diff_cmd])
+        .current_dir(repo_path)
+        .env("TERM", "xterm-256color")
+        .env("COLUMNS", width.to_string())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .output()?;
+
+    let stdout = filter_control_chars(&output.stdout);
+    let content = stdout.into_text().unwrap_or_default();
+    let total_lines = content.lines.len();
+
+    Ok(DiffState {
+        content,
+        scroll_offset: 0,
+        hunk_positions: Vec::new(),
+        current_hunk: 0,
+        total_lines,
+        has_both: false,
+        showing_staged: false,
+    })
+}

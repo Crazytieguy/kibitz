@@ -97,22 +97,44 @@ impl App {
         Ok(())
     }
 
-    pub fn request_diff(&mut self) {
-        if let Some(path) = self.file_tree.selected_file_path() {
-            let status = self.file_tree.get_file_status(&path);
-            let diff_width = if self.show_tree {
-                self.terminal_size.0.saturating_sub(32)
-            } else {
-                self.terminal_size.0
-            };
+    fn get_diff_width(&self) -> usize {
+        if self.show_tree {
+            // Estimate based on typical tree width
+            self.terminal_size.0.saturating_sub(35) as usize
+        } else {
+            self.terminal_size.0 as usize
+        }
+    }
 
-            let rx = git::diff::get_diff(
-                &self.repo_path,
-                &path,
-                status,
-                diff_width as usize,
-                            );
-            self.pending_diff = Some(rx);
+    pub fn request_diff(&mut self) {
+        let diff_width = self.get_diff_width();
+
+        if let Some((path, is_dir)) = self.file_tree.selected_path() {
+            if is_dir {
+                // Folder selected - get all files under it
+                let files = self.file_tree.files_under_path(&path);
+                if files.is_empty() {
+                    self.diff_state = DiffState::new();
+                    self.pending_diff = None;
+                } else {
+                    let rx = git::diff::get_diff_for_paths(
+                        &self.repo_path,
+                        &files,
+                        diff_width,
+                    );
+                    self.pending_diff = Some(rx);
+                }
+            } else {
+                // Single file
+                let status = self.file_tree.get_file_status(&path);
+                let rx = git::diff::get_diff(
+                    &self.repo_path,
+                    &path,
+                    status,
+                    diff_width,
+                );
+                self.pending_diff = Some(rx);
+            }
         } else {
             self.diff_state = DiffState::new();
             self.pending_diff = None;
@@ -122,18 +144,14 @@ impl App {
     pub fn request_diff_staged(&mut self, staged: bool) {
         if let Some(path) = self.file_tree.selected_file_path() {
             let status = self.file_tree.get_file_status(&path);
-            let diff_width = if self.show_tree {
-                self.terminal_size.0.saturating_sub(32)
-            } else {
-                self.terminal_size.0
-            };
+            let diff_width = self.get_diff_width();
 
             let rx = git::diff::get_diff_staged(
                 &self.repo_path,
                 &path,
                 status,
-                diff_width as usize,
-                                staged,
+                diff_width,
+                staged,
             );
             self.pending_diff = Some(rx);
         }

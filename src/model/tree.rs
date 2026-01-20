@@ -239,6 +239,22 @@ impl FileTree {
         })
     }
 
+    /// Returns the selected path (file or folder)
+    pub fn selected_path(&self) -> Option<(PathBuf, bool)> {
+        self.flat_list
+            .get(self.selected_index)
+            .map(|n| (n.path.clone(), n.is_dir))
+    }
+
+    /// Get all file paths under a folder (recursively)
+    pub fn files_under_path(&self, folder_path: &Path) -> Vec<PathBuf> {
+        self.file_statuses
+            .keys()
+            .filter(|p| p.starts_with(folder_path))
+            .cloned()
+            .collect()
+    }
+
     pub fn get_file_status(&self, path: &Path) -> Option<FileStatus> {
         self.file_statuses.get(path).copied()
     }

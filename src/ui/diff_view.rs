@@ -3,7 +3,7 @@ use ratatui::{
     Frame,
     layout::Rect,
     style::{Color, Style},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, Wrap},
 };
 
 pub fn render(frame: &mut Frame, area: Rect, state: &DiffState) {
@@ -38,6 +38,7 @@ pub fn render(frame: &mut Frame, area: Rect, state: &DiffState) {
 
     let paragraph = Paragraph::new(state.content.clone())
         .block(block)
+        .wrap(Wrap { trim: false })
         .scroll((state.scroll_offset as u16, 0));
 
     frame.render_widget(paragraph, area);

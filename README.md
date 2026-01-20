@@ -31,17 +31,19 @@ git-diff-tui
 
 ## Keybindings
 
+All navigation uses `j`/`k` with modifiers:
+
 | Key | Action |
 |-----|--------|
 | `q` | Quit |
-| `j`/`k`/`↑`/`↓` | Navigate file tree |
+| `j`/`k` | Navigate file tree |
+| `Alt+j`/`Alt+k` | Scroll diff line by line |
+| `Ctrl+j`/`Ctrl+k` | Scroll diff half page |
+| `Shift+J`/`Shift+K` | Next / prev hunk |
 | `l`/`Enter`/`→` | Expand folder |
 | `h`/`←` | Collapse folder / go to parent |
-| `J`/`K` (shift) | Next / prev hunk |
 | `Space`/`PageDown` | Page down diff |
 | `PageUp` | Page up diff |
-| `Ctrl-d`/`Ctrl-u` | Half-page scroll diff |
-| `Ctrl-e`/`Ctrl-y` | Single line scroll diff |
 | `g`/`Home` | Top of diff |
 | `G`/`End` | Bottom of diff |
 | Mouse scroll | Scroll diff |
@@ -59,6 +61,12 @@ git-diff-tui
 | `?` | Untracked |
 | `S` | Staged |
 | `±` | Has both staged and unstaged changes |
+
+## Planned Features
+
+- **Configuration file** - TOML config for delta args, keybindings, colors
+- **CLI options** - Override config via command line (`--delta-args`, etc.)
+- **Theme hot-reload** - Respond to terminal theme change signals (SIGUSR1)
 
 ## Development
 

@@ -9,23 +9,51 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
         (KeyCode::Char('q'), KeyModifiers::NONE) => return Ok(true),
         (KeyCode::Char('c'), KeyModifiers::CONTROL) => return Ok(true),
 
-        // File tree navigation
-        (KeyCode::Char('j') | KeyCode::Down, KeyModifiers::NONE) => {
-            let prev_file = app.file_tree.selected_file_path();
+        // === j/k family - all navigation ===
+
+        // j/k alone - navigate file tree
+        (KeyCode::Char('j'), KeyModifiers::NONE) | (KeyCode::Down, KeyModifiers::NONE) => {
+            let prev_path = app.file_tree.selected_path();
             app.file_tree.move_down();
-            let new_file = app.file_tree.selected_file_path();
-            if prev_file != new_file {
+            let new_path = app.file_tree.selected_path();
+            if prev_path != new_path {
                 app.request_diff();
             }
         }
-        (KeyCode::Char('k') | KeyCode::Up, KeyModifiers::NONE) => {
-            let prev_file = app.file_tree.selected_file_path();
+        (KeyCode::Char('k'), KeyModifiers::NONE) | (KeyCode::Up, KeyModifiers::NONE) => {
+            let prev_path = app.file_tree.selected_path();
             app.file_tree.move_up();
-            let new_file = app.file_tree.selected_file_path();
-            if prev_file != new_file {
+            let new_path = app.file_tree.selected_path();
+            if prev_path != new_path {
                 app.request_diff();
             }
         }
+
+        // Alt+j/k - scroll diff line by line
+        (KeyCode::Char('j'), KeyModifiers::ALT) => {
+            app.diff_state.scroll_down(1);
+        }
+        (KeyCode::Char('k'), KeyModifiers::ALT) => {
+            app.diff_state.scroll_up(1);
+        }
+
+        // Ctrl+j/k - scroll diff half page
+        (KeyCode::Char('j'), KeyModifiers::CONTROL) => {
+            app.diff_state.scroll_down(15);
+        }
+        (KeyCode::Char('k'), KeyModifiers::CONTROL) => {
+            app.diff_state.scroll_up(15);
+        }
+
+        // Shift+J/K - next/prev hunk
+        (KeyCode::Char('J'), KeyModifiers::SHIFT) => {
+            app.diff_state.next_hunk();
+        }
+        (KeyCode::Char('K'), KeyModifiers::SHIFT) => {
+            app.diff_state.prev_hunk();
+        }
+
+        // === File tree expansion ===
         (KeyCode::Char('l') | KeyCode::Right | KeyCode::Enter, KeyModifiers::NONE) => {
             app.file_tree.expand();
         }
@@ -33,55 +61,24 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
             app.file_tree.collapse();
         }
 
-        // Hunk navigation (shift+j/k)
-        (KeyCode::Char('J'), KeyModifiers::SHIFT) | (KeyCode::Down, KeyModifiers::SHIFT) => {
-            app.diff_state.next_hunk();
-        }
-        (KeyCode::Char('K'), KeyModifiers::SHIFT) | (KeyCode::Up, KeyModifiers::SHIFT) => {
-            app.diff_state.prev_hunk();
-        }
-
-        // Diff scrolling - half page
-        (KeyCode::Char('d'), KeyModifiers::CONTROL) => {
-            app.diff_state.scroll_down(15);
-        }
-        (KeyCode::Char('u'), KeyModifiers::CONTROL) => {
-            app.diff_state.scroll_up(15);
-        }
-
-        // Diff scrolling - full page
+        // === Additional scroll keys ===
         (KeyCode::PageDown, _) | (KeyCode::Char(' '), KeyModifiers::NONE) => {
             app.diff_state.scroll_down(30);
         }
         (KeyCode::PageUp, _) => {
             app.diff_state.scroll_up(30);
         }
-
-        // Diff scrolling - single line (vim style)
-        (KeyCode::Char('e'), KeyModifiers::CONTROL) => {
-            app.diff_state.scroll_down(1);
-        }
-        (KeyCode::Char('y'), KeyModifiers::CONTROL) => {
-            app.diff_state.scroll_up(1);
-        }
-
-        // Diff scrolling - top/bottom
-        (KeyCode::Char('g'), KeyModifiers::NONE) => {
+        (KeyCode::Char('g'), KeyModifiers::NONE) | (KeyCode::Home, _) => {
             app.diff_state.scroll_to_top();
         }
         (KeyCode::Char('G'), KeyModifiers::SHIFT) | (KeyCode::End, _) => {
             app.diff_state.scroll_to_bottom();
         }
-        (KeyCode::Home, _) => {
-            app.diff_state.scroll_to_top();
-        }
 
-        // Toggle tree visibility
+        // === Toggles ===
         (KeyCode::Char('t'), KeyModifiers::NONE) => {
             app.toggle_tree();
         }
-
-        // Toggle staged/unstaged
         (KeyCode::Char('s'), KeyModifiers::NONE) => {
             app.toggle_staged();
         }
