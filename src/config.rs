@@ -126,7 +126,7 @@ impl Config {
         }
 
         // Load local config (overrides global)
-        let local_path = repo_path.join(".git-diff-tui.toml");
+        let local_path = repo_path.join(".kibitz.toml");
         if let Ok(raw) = Self::load_file(&local_path) {
             config.merge(raw);
         }
@@ -135,7 +135,7 @@ impl Config {
     }
 
     fn global_config_path() -> Option<std::path::PathBuf> {
-        dirs::config_dir().map(|p| p.join("git-diff-tui").join("config.toml"))
+        dirs::config_dir().map(|p| p.join("kibitz").join("config.toml"))
     }
 
     fn load_file(path: &Path) -> Result<RawConfig, Box<dyn std::error::Error>> {

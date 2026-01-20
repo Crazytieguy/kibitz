@@ -1,6 +1,6 @@
-# git-diff-tui
+# kibitz
 
-A space-efficient terminal UI for viewing git diffs with file tree navigation and delta integration.
+A terminal UI for kibitzing on your coding agent's changes. Watch git diffs in real-time with file tree navigation and delta integration.
 
 ## Features
 
@@ -28,7 +28,7 @@ cargo install --path .
 Run in any git repository:
 
 ```bash
-git-diff-tui
+kibitz
 ```
 
 ## Keybindings
@@ -70,8 +70,8 @@ All navigation uses `j`/`k` with modifiers:
 
 Configuration is loaded from TOML files in two locations (local overrides global):
 
-1. **Global**: `~/.config/git-diff-tui/config.toml`
-2. **Local**: `.git-diff-tui.toml` in repository root
+1. **Global**: `~/.config/kibitz/config.toml`
+2. **Local**: `.kibitz.toml` in repository root
 
 ### Example Configuration
 

@@ -491,23 +491,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "git-diff-tui"
-version = "0.1.0"
-dependencies = [
- "ansi-to-tui",
- "anyhow",
- "crossterm",
- "dirs",
- "git2",
- "notify",
- "notify-debouncer-mini",
- "portable-pty",
- "ratatui",
- "serde",
- "toml",
-]
-
-[[package]]
 name = "git2"
 version = "0.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -749,6 +732,23 @@ dependencies = [
  "hashbrown",
  "portable-atomic",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "kibitz"
+version = "0.1.0"
+dependencies = [
+ "ansi-to-tui",
+ "anyhow",
+ "crossterm",
+ "dirs",
+ "git2",
+ "notify",
+ "notify-debouncer-mini",
+ "portable-pty",
+ "ratatui",
+ "serde",
+ "toml",
 ]
 
 [[package]]
