@@ -88,7 +88,20 @@ struct FlatNode {
 impl FileTree {
     pub fn from_git_status(repo_path: &Path) -> Result<Self> {
         let (files, file_statuses) = crate::git::status::get_status(repo_path)?;
+        Ok(Self::from_files(files, file_statuses))
+    }
 
+    /// Build a FileTree from a list of files (used for commit file views)
+    pub fn from_commit_files(files: Vec<(PathBuf, FileStatus)>) -> Self {
+        let file_statuses: HashMap<PathBuf, FileStatus> =
+            files.iter().cloned().collect();
+        Self::from_files(files, file_statuses)
+    }
+
+    fn from_files(
+        files: Vec<(PathBuf, FileStatus)>,
+        file_statuses: HashMap<PathBuf, FileStatus>,
+    ) -> Self {
         let mut root = Vec::new();
 
         for (path, status) in &files {
@@ -106,7 +119,7 @@ impl FileTree {
 
         tree.rebuild_flat_list();
 
-        Ok(tree)
+        tree
     }
 
     fn insert_path(nodes: &mut Vec<TreeNode>, path: &Path, status: FileStatus) {

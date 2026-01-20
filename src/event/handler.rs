@@ -73,6 +73,14 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
             app.toggle_staged();
         }
 
+        // === History navigation ===
+        (KeyCode::Char('['), KeyModifiers::NONE) => {
+            app.go_back_in_history()?;
+        }
+        (KeyCode::Char(']'), KeyModifiers::NONE) => {
+            app.go_forward_in_history()?;
+        }
+
         _ => {}
     }
 

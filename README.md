@@ -8,6 +8,7 @@ A space-efficient terminal UI for viewing git diffs with file tree navigation an
 - **Delta integration** - Beautiful syntax-highlighted diffs via delta (required)
 - **Smart diff display** - Shows unstaged changes by default, toggle to staged with `s`
 - **Hunk navigation** - Jump between diff hunks with `J`/`K`
+- **Commit history** - Browse through commit history with `[`/`]`
 - **Hot reload** - Automatically refreshes when files change
 - **Toggle tree** - Hide/show file tree with `t` for full-width diff view
 - **Configurable** - TOML config for delta args and colors
@@ -50,6 +51,8 @@ All navigation uses `j`/`k` with modifiers:
 | Mouse scroll | Scroll diff |
 | `t` | Toggle file tree visibility |
 | `s` | Toggle staged/unstaged (when file has both) |
+| `[` | Go back one commit in history |
+| `]` | Go forward (toward working tree) |
 
 ## Status Icons
 
@@ -106,7 +109,6 @@ See [delta documentation](https://dandavison.github.io/delta/) for all options.
 
 ## Planned Features
 
-- **Commit history navigation** - When no uncommitted changes exist, show diffs from recent commits; navigate through commit history
 - **Configurable keybindings** - Remap keys via config file
 - **CLI options** - Override config via command line (`--delta-args`, etc.)
 - **Theme hot-reload** - Respond to terminal theme change signals (SIGUSR1)

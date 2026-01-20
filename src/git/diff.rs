@@ -38,41 +38,9 @@ pub fn load_diff_async(req: DiffRequest) -> mpsc::Receiver<DiffState> {
 }
 
 fn get_diff_sync(req: &DiffRequest) -> Result<DiffState> {
-    // Build the diff command
     let diff_cmd = build_diff_command(req);
-
-    // Use script to fake a TTY for delta's color output
-    // script -q /dev/null runs the command in a pseudo-terminal
-    let output = Command::new("script")
-        .args(["-q", "/dev/null", "sh", "-c", &diff_cmd])
-        .current_dir(&req.repo_path)
-        .env("TERM", "xterm-256color")
-        .env("COLUMNS", req.width.to_string())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .output()?;
-
-    // Filter out control characters that script adds (like ^D and terminal queries)
-    let stdout = filter_control_chars(&output.stdout);
-
-    // Convert ANSI to ratatui Text
-    let content = stdout.into_text().unwrap_or_default();
-    let total_lines = content.lines.len();
-
-    // Find hunk positions by looking for delta's file headers (Δ) or hunk markers (•)
-    let hunk_positions = find_hunk_positions(&content);
-
-    let has_both = req.status.map(|s| s.has_both()).unwrap_or(false);
-
-    Ok(DiffState {
-        content,
-        scroll_offset: 0,
-        hunk_positions,
-        current_hunk: 0,
-        total_lines,
-        has_both,
-        showing_staged: req.staged,
-    })
+    let has_both = req.status.is_some_and(|s| s.has_both());
+    run_diff_command(&req.repo_path, &diff_cmd, req.width, has_both, req.staged)
 }
 
 /// Filter out control characters and script artifacts from output
@@ -241,7 +209,6 @@ fn get_multi_diff_sync(
         return Ok(DiffState::new());
     }
 
-    // Build a command that diffs all files at once
     let user_args = delta_args.unwrap_or("");
     let files_arg: Vec<_> = file_paths
         .iter()
@@ -254,8 +221,19 @@ fn get_multi_diff_sync(
         user_args
     );
 
+    run_diff_command(repo_path, &diff_cmd, width, false, false)
+}
+
+/// Run a diff command and convert output to DiffState
+fn run_diff_command(
+    repo_path: &Path,
+    diff_cmd: &str,
+    width: usize,
+    has_both: bool,
+    showing_staged: bool,
+) -> Result<DiffState> {
     let output = Command::new("script")
-        .args(["-q", "/dev/null", "sh", "-c", &diff_cmd])
+        .args(["-q", "/dev/null", "sh", "-c", diff_cmd])
         .current_dir(repo_path)
         .env("TERM", "xterm-256color")
         .env("COLUMNS", width.to_string())
@@ -274,7 +252,78 @@ fn get_multi_diff_sync(
         hunk_positions,
         current_hunk: 0,
         total_lines,
-        has_both: false,
-        showing_staged: false,
+        has_both,
+        showing_staged,
     })
+}
+
+/// Get diff for a specific commit (comparing to its parent)
+pub fn get_commit_diff(
+    repo_path: &Path,
+    oid: &str,
+    width: usize,
+    delta_args: Option<String>,
+) -> mpsc::Receiver<DiffState> {
+    let (tx, rx) = mpsc::channel();
+    let repo_path = repo_path.to_path_buf();
+    let oid = oid.to_string();
+
+    thread::spawn(move || {
+        let result = get_commit_diff_sync(&repo_path, &oid, width, delta_args.as_deref());
+        let _ = tx.send(result.unwrap_or_default());
+    });
+
+    rx
+}
+
+fn get_commit_diff_sync(
+    repo_path: &Path,
+    oid: &str,
+    width: usize,
+    delta_args: Option<&str>,
+) -> Result<DiffState> {
+    let user_args = delta_args.unwrap_or("");
+    let diff_cmd = format!(
+        "git show --format='' --color=always {} | delta --paging=never {}",
+        oid, user_args
+    );
+    run_diff_command(repo_path, &diff_cmd, width, false, false)
+}
+
+/// Get diff for a specific file within a commit
+pub fn get_commit_file_diff(
+    repo_path: &Path,
+    oid: &str,
+    file_path: &Path,
+    width: usize,
+    delta_args: Option<String>,
+) -> mpsc::Receiver<DiffState> {
+    let (tx, rx) = mpsc::channel();
+    let repo_path = repo_path.to_path_buf();
+    let oid = oid.to_string();
+    let file_path = file_path.to_path_buf();
+
+    thread::spawn(move || {
+        let result = get_commit_file_diff_sync(&repo_path, &oid, &file_path, width, delta_args.as_deref());
+        let _ = tx.send(result.unwrap_or_default());
+    });
+
+    rx
+}
+
+fn get_commit_file_diff_sync(
+    repo_path: &Path,
+    oid: &str,
+    file_path: &Path,
+    width: usize,
+    delta_args: Option<&str>,
+) -> Result<DiffState> {
+    let user_args = delta_args.unwrap_or("");
+    let diff_cmd = format!(
+        "git show --format='' --color=always {} -- '{}' | delta --paging=never {}",
+        oid,
+        file_path.to_string_lossy(),
+        user_args
+    );
+    run_diff_command(repo_path, &diff_cmd, width, false, false)
 }

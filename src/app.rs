@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::event::{self, watcher::FileWatcher};
 use crate::git;
-use crate::model::{DiffState, FileTree};
+use crate::model::{CommitInfo, DiffState, FileTree};
 use crate::ui;
 use anyhow::Result;
 use crossterm::event::{self as ct_event, Event};
@@ -16,6 +16,10 @@ pub struct App {
     pub show_tree: bool,
     pub repo_path: PathBuf,
     pub config: Config,
+    /// History position: 0 = working tree, 1 = HEAD, 2 = HEAD~1, etc.
+    pub history_position: usize,
+    /// Current commit info when viewing history (None when at working tree)
+    pub current_commit: Option<CommitInfo>,
     #[allow(dead_code)]
     file_watcher: FileWatcher,
     watcher_rx: mpsc::Receiver<()>,
@@ -38,6 +42,8 @@ impl App {
             show_tree: true,
             repo_path,
             config,
+            history_position: 0,
+            current_commit: None,
             file_watcher: watcher,
             watcher_rx: rx,
             terminal_size: (0, 0),
@@ -113,6 +119,19 @@ impl App {
     pub fn request_diff(&mut self) {
         let diff_width = self.get_diff_width();
 
+        if self.history_position == 0 {
+            // Working tree - existing behavior
+            self.request_working_tree_diff(diff_width);
+        } else if let Some(commit) = &self.current_commit {
+            // Historical commit
+            self.request_commit_diff(commit.oid_full.clone(), diff_width);
+        } else {
+            self.diff_state = DiffState::new();
+            self.pending_diff = None;
+        }
+    }
+
+    fn request_working_tree_diff(&mut self, diff_width: usize) {
         if let Some((path, is_dir)) = self.file_tree.selected_path() {
             if is_dir {
                 // Folder selected - get all files under it
@@ -144,6 +163,40 @@ impl App {
         } else {
             self.diff_state = DiffState::new();
             self.pending_diff = None;
+        }
+    }
+
+    fn request_commit_diff(&mut self, oid: String, diff_width: usize) {
+        if let Some((path, is_dir)) = self.file_tree.selected_path() {
+            if is_dir {
+                // Folder selected in commit - show full commit diff
+                let rx = git::diff::get_commit_diff(
+                    &self.repo_path,
+                    &oid,
+                    diff_width,
+                    self.config.delta.args.clone(),
+                );
+                self.pending_diff = Some(rx);
+            } else {
+                // Single file in commit
+                let rx = git::diff::get_commit_file_diff(
+                    &self.repo_path,
+                    &oid,
+                    &path,
+                    diff_width,
+                    self.config.delta.args.clone(),
+                );
+                self.pending_diff = Some(rx);
+            }
+        } else {
+            // No file selected, show full commit diff
+            let rx = git::diff::get_commit_diff(
+                &self.repo_path,
+                &oid,
+                diff_width,
+                self.config.delta.args.clone(),
+            );
+            self.pending_diff = Some(rx);
         }
     }
 
@@ -183,5 +236,43 @@ impl App {
         if self.file_tree.selected_path() != prev_path {
             self.request_diff();
         }
+    }
+
+    /// Go back one commit in history (deeper into history)
+    pub fn go_back_in_history(&mut self) -> Result<()> {
+        let new_position = self.history_position + 1;
+        if self.load_history_position(new_position)? {
+            self.history_position = new_position;
+        }
+        Ok(())
+    }
+
+    /// Go forward one commit (toward working tree)
+    pub fn go_forward_in_history(&mut self) -> Result<()> {
+        if self.history_position > 0 {
+            self.history_position -= 1;
+            self.load_history_position(self.history_position)?;
+        }
+        Ok(())
+    }
+
+    /// Load file tree for a history position. Returns false if position doesn't exist.
+    fn load_history_position(&mut self, position: usize) -> Result<bool> {
+        if position == 0 {
+            self.current_commit = None;
+            self.file_tree = FileTree::from_git_status(&self.repo_path)?;
+            self.request_diff();
+            return Ok(true);
+        }
+
+        let Some(commit) = git::history::get_commit_at(&self.repo_path, position - 1)? else {
+            return Ok(false);
+        };
+
+        let files = git::history::get_commit_files(&self.repo_path, &commit.oid_full)?;
+        self.file_tree = FileTree::from_commit_files(files);
+        self.current_commit = Some(commit);
+        self.request_diff();
+        Ok(true)
     }
 }

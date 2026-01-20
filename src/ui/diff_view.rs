@@ -1,4 +1,4 @@
-use crate::model::DiffState;
+use crate::model::{CommitInfo, DiffState};
 use ratatui::{
     Frame,
     layout::Rect,
@@ -6,13 +6,8 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Wrap},
 };
 
-pub fn render(frame: &mut Frame, area: Rect, state: &DiffState) {
-    let title = match (state.has_both, state.showing_staged) {
-        (true, true) => " Diff (staged) [s to toggle] ",
-        (true, false) => " Diff (unstaged) [s to toggle] ",
-        (false, true) => " Diff (staged) ",
-        (false, false) => " Diff ",
-    };
+pub fn render(frame: &mut Frame, area: Rect, state: &DiffState, commit: Option<&CommitInfo>) {
+    let title = build_title(state, commit);
 
     let hunk_info = if !state.hunk_positions.is_empty() {
         format!(
@@ -57,5 +52,29 @@ pub fn render(frame: &mut Frame, area: Rect, state: &DiffState) {
                 Style::default().fg(Color::DarkGray),
             );
         }
+    }
+}
+
+fn build_title(state: &DiffState, commit: Option<&CommitInfo>) -> String {
+    if let Some(c) = commit {
+        let msg = truncate_message(&c.message, 50);
+        return format!(" {}: {} ", c.oid, msg);
+    }
+
+    let staged_label = if state.showing_staged { "staged" } else { "unstaged" };
+    let toggle_hint = if state.has_both { " [s to toggle]" } else { "" };
+
+    if state.showing_staged || state.has_both {
+        format!(" Diff ({staged_label}){toggle_hint} ")
+    } else {
+        " Diff ".to_string()
+    }
+}
+
+fn truncate_message(msg: &str, max_len: usize) -> String {
+    if msg.len() > max_len {
+        format!("{}...", &msg[..max_len - 3])
+    } else {
+        msg.to_string()
     }
 }

@@ -1,5 +1,5 @@
 use crate::config::ColorConfig;
-use crate::model::{FileStatus, FileTree};
+use crate::model::{CommitInfo, FileStatus, FileTree};
 use ratatui::{
     Frame,
     layout::Rect,
@@ -8,7 +8,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem},
 };
 
-pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree, colors: &ColorConfig) {
+pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree, colors: &ColorConfig, commit: Option<&CommitInfo>) {
     let visible = tree.visible_items();
     let items: Vec<ListItem> = visible
         .iter()
@@ -55,8 +55,13 @@ pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree, colors: &ColorConf
         })
         .collect();
 
+    let title = match commit {
+        Some(c) => format!(" {} ", c.oid),
+        None => " Changes ".to_string(),
+    };
+
     let list = List::new(items)
-        .block(Block::default().borders(Borders::RIGHT).title(" Files "));
+        .block(Block::default().borders(Borders::RIGHT).title(title));
 
     frame.render_widget(list, area);
 }
