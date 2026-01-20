@@ -216,13 +216,14 @@ impl FileTree {
     }
 
     pub fn expand(&mut self) {
-        if let Some(node) = self.flat_list.get(self.selected_index)
-            && node.is_dir
-            && !node.expanded
-        {
-            let path = node.path.clone();
-            Self::set_expanded(&mut self.root, &path, true);
-            self.rebuild_flat_list();
+        if let Some(node) = self.flat_list.get(self.selected_index) {
+            if node.is_dir && !node.expanded {
+                let path = node.path.clone();
+                Self::set_expanded(&mut self.root, &path, true);
+                self.rebuild_flat_list();
+            } else {
+                self.move_down();
+            }
         }
     }
 
