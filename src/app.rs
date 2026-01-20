@@ -169,4 +169,12 @@ impl App {
             self.request_diff_staged(new_staged);
         }
     }
+
+    pub fn navigate_tree(&mut self, navigate_fn: impl FnOnce(&mut FileTree)) {
+        let prev_path = self.file_tree.selected_path();
+        navigate_fn(&mut self.file_tree);
+        if self.file_tree.selected_path() != prev_path {
+            self.request_diff();
+        }
+    }
 }

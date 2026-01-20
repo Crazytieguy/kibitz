@@ -211,24 +211,9 @@ pub fn get_diff(
     status: Option<FileStatus>,
     width: usize,
 ) -> mpsc::Receiver<DiffState> {
-    let staged = match status {
-        Some(s) => {
-            if s.has_both() {
-                false
-            } else {
-                s.has_staged()
-            }
-        }
-        None => false,
-    };
-
-    load_diff_async(DiffRequest {
-        repo_path: repo_path.to_path_buf(),
-        file_path: file_path.to_path_buf(),
-        status,
-        width,
-        staged,
-    })
+    // Default: show unstaged if file has both, otherwise show staged if only staged
+    let staged = status.is_some_and(|s| !s.has_both() && s.has_staged());
+    get_diff_staged(repo_path, file_path, status, width, staged)
 }
 
 pub fn get_diff_staged(

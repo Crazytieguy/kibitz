@@ -65,14 +65,24 @@ pub struct FileTree {
     file_statuses: HashMap<PathBuf, FileStatus>,
 }
 
+/// A flattened view of a tree node for display
 #[derive(Debug, Clone)]
-struct FlatNode {
-    pub path: PathBuf,
+pub struct VisibleNode {
+    pub name: String,
     pub depth: usize,
     pub is_dir: bool,
     pub expanded: bool,
-    pub name: String,
     pub status: Option<FileStatus>,
+}
+
+#[derive(Debug, Clone)]
+struct FlatNode {
+    path: PathBuf,
+    depth: usize,
+    is_dir: bool,
+    expanded: bool,
+    name: String,
+    status: Option<FileStatus>,
 }
 
 impl FileTree {
@@ -167,10 +177,16 @@ impl FileTree {
         }
     }
 
-    pub fn visible_items(&self) -> Vec<(String, usize, bool, bool, Option<FileStatus>)> {
+    pub fn visible_items(&self) -> Vec<VisibleNode> {
         self.flat_list
             .iter()
-            .map(|n| (n.name.clone(), n.depth, n.is_dir, n.expanded, n.status))
+            .map(|n| VisibleNode {
+                name: n.name.clone(),
+                depth: n.depth,
+                is_dir: n.is_dir,
+                expanded: n.expanded,
+                status: n.status,
+            })
             .collect()
     }
 

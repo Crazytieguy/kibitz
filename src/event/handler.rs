@@ -13,20 +13,10 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
 
         // j/k alone - navigate file tree
         (KeyCode::Char('j'), KeyModifiers::NONE) | (KeyCode::Down, KeyModifiers::NONE) => {
-            let prev_path = app.file_tree.selected_path();
-            app.file_tree.move_down();
-            let new_path = app.file_tree.selected_path();
-            if prev_path != new_path {
-                app.request_diff();
-            }
+            app.navigate_tree(|tree| tree.move_down());
         }
         (KeyCode::Char('k'), KeyModifiers::NONE) | (KeyCode::Up, KeyModifiers::NONE) => {
-            let prev_path = app.file_tree.selected_path();
-            app.file_tree.move_up();
-            let new_path = app.file_tree.selected_path();
-            if prev_path != new_path {
-                app.request_diff();
-            }
+            app.navigate_tree(|tree| tree.move_up());
         }
 
         // Alt+j/k - scroll diff line by line

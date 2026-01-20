@@ -21,20 +21,20 @@ pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree) {
     let items: Vec<ListItem> = visible
         .iter()
         .enumerate()
-        .map(|(i, (name, depth, is_dir, expanded, status))| {
-            let indent = "  ".repeat(*depth);
+        .map(|(i, node)| {
+            let indent = "  ".repeat(node.depth);
 
             let mut spans = vec![Span::raw(indent)];
 
-            if *is_dir {
-                let icon = if *expanded { "▼ " } else { "▶ " };
+            if node.is_dir {
+                let icon = if node.expanded { "▼ " } else { "▶ " };
                 spans.push(Span::styled(icon, Style::default().fg(BLUE)));
                 spans.push(Span::styled(
-                    name.as_str(),
+                    node.name.as_str(),
                     Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
                 ));
             } else {
-                let (icon, icon_color) = match status {
+                let (icon, icon_color) = match node.status {
                     Some(FileStatus::Modified) => ("M ", YELLOW),
                     Some(FileStatus::Added) => ("A ", GREEN),
                     Some(FileStatus::Deleted) => ("D ", RED),
@@ -45,7 +45,7 @@ pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree) {
                     None => ("  ", Color::Reset),
                 };
                 spans.push(Span::styled(icon, Style::default().fg(icon_color)));
-                spans.push(Span::raw(name.as_str()));
+                spans.push(Span::raw(node.name.as_str()));
             }
 
             let mut item = ListItem::new(Line::from(spans));

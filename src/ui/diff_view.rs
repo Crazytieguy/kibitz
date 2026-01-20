@@ -7,16 +7,11 @@ use ratatui::{
 };
 
 pub fn render(frame: &mut Frame, area: Rect, state: &DiffState) {
-    let title = if state.has_both {
-        if state.showing_staged {
-            " Diff (staged) [s to toggle] "
-        } else {
-            " Diff (unstaged) [s to toggle] "
-        }
-    } else if state.showing_staged {
-        " Diff (staged) "
-    } else {
-        " Diff "
+    let title = match (state.has_both, state.showing_staged) {
+        (true, true) => " Diff (staged) [s to toggle] ",
+        (true, false) => " Diff (unstaged) [s to toggle] ",
+        (false, true) => " Diff (staged) ",
+        (false, false) => " Diff ",
     };
 
     let hunk_info = if !state.hunk_positions.is_empty() {

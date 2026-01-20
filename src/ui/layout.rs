@@ -38,9 +38,9 @@ fn calculate_tree_width(file_tree: &FileTree, max_available: u16) -> u16 {
     let max_name_width = file_tree
         .visible_items()
         .iter()
-        .map(|(name, depth, _, _, _)| {
+        .map(|node| {
             // Calculate display width: indent (2 chars per depth) + icon (2) + name
-            (*depth as u16 * 2) + 2 + name.len() as u16
+            (node.depth as u16 * 2) + 2 + node.name.len() as u16
         })
         .max()
         .unwrap_or(MIN_TREE_WIDTH);
