@@ -70,7 +70,7 @@ All navigation uses `j`/`k` with modifiers:
 
 Configuration is loaded from TOML files in two locations (local overrides global):
 
-1. **Global**: `~/.config/kibitz/config.toml`
+1. **Global**: `~/Library/Application Support/kibitz/config.toml` (macOS) or `~/.config/kibitz/config.toml` (Linux)
 2. **Local**: `.kibitz.toml` in repository root
 
 ### Example Configuration
@@ -112,6 +112,7 @@ See [delta documentation](https://dandavison.github.io/delta/) for all options.
 - **Configurable keybindings** - Remap keys via config file
 - **CLI options** - Override config via command line (`--delta-args`, etc.)
 - **Theme hot-reload** - Respond to terminal theme change signals (SIGUSR1)
+- **XDG config path** - Use `~/.config/kibitz/` on all platforms instead of platform-native paths
 
 ## Development
 
