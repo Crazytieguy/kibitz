@@ -1,3 +1,4 @@
+use crate::config::ColorConfig;
 use crate::model::{FileStatus, FileTree};
 use ratatui::{
     Frame,
@@ -7,16 +8,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem},
 };
 
-// Use ANSI indexed colors (0-15) which respect terminal theme
-const BLUE: Color = Color::Indexed(4);      // ANSI blue
-const YELLOW: Color = Color::Indexed(3);    // ANSI yellow
-const GREEN: Color = Color::Indexed(2);     // ANSI green
-const RED: Color = Color::Indexed(1);       // ANSI red
-const CYAN: Color = Color::Indexed(6);      // ANSI cyan
-const MAGENTA: Color = Color::Indexed(5);   // ANSI magenta
-const BRIGHT_BLACK: Color = Color::Indexed(8); // For dimmed text
-
-pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree) {
+pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree, colors: &ColorConfig) {
     let visible = tree.visible_items();
     let items: Vec<ListItem> = visible
         .iter()
@@ -28,20 +20,20 @@ pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree) {
 
             if node.is_dir {
                 let icon = if node.expanded { "▼ " } else { "▶ " };
-                spans.push(Span::styled(icon, Style::default().fg(BLUE)));
+                spans.push(Span::styled(icon, Style::default().fg(colors.folder)));
                 spans.push(Span::styled(
                     node.name.as_str(),
-                    Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
+                    Style::default().fg(colors.folder).add_modifier(Modifier::BOLD),
                 ));
             } else {
                 let (icon, icon_color) = match node.status {
-                    Some(FileStatus::Modified) => ("M ", YELLOW),
-                    Some(FileStatus::Added) => ("A ", GREEN),
-                    Some(FileStatus::Deleted) => ("D ", RED),
-                    Some(FileStatus::Renamed) => ("R ", CYAN),
-                    Some(FileStatus::Untracked) => ("? ", BRIGHT_BLACK),
-                    Some(FileStatus::Staged) => ("S ", GREEN),
-                    Some(FileStatus::StagedModified) => ("± ", MAGENTA),
+                    Some(FileStatus::Modified) => ("M ", colors.modified),
+                    Some(FileStatus::Added) => ("A ", colors.added),
+                    Some(FileStatus::Deleted) => ("D ", colors.deleted),
+                    Some(FileStatus::Renamed) => ("R ", colors.renamed),
+                    Some(FileStatus::Untracked) => ("? ", colors.untracked),
+                    Some(FileStatus::Staged) => ("S ", colors.staged),
+                    Some(FileStatus::StagedModified) => ("± ", colors.staged_modified),
                     None => ("  ", Color::Reset),
                 };
                 spans.push(Span::styled(icon, Style::default().fg(icon_color)));

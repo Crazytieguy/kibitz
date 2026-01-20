@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::event::{self, watcher::FileWatcher};
 use crate::git;
 use crate::model::{DiffState, FileTree};
@@ -14,6 +15,7 @@ pub struct App {
     pub diff_state: DiffState,
     pub show_tree: bool,
     pub repo_path: PathBuf,
+    pub config: Config,
     #[allow(dead_code)]
     file_watcher: FileWatcher,
     watcher_rx: mpsc::Receiver<()>,
@@ -24,6 +26,7 @@ pub struct App {
 impl App {
     pub fn new() -> Result<Self> {
         let repo_path = git::status::find_repo_root()?;
+        let config = Config::load(&repo_path);
         let file_tree = FileTree::from_git_status(&repo_path)?;
 
         let (tx, rx) = mpsc::channel();
@@ -34,6 +37,7 @@ impl App {
             diff_state: DiffState::new(),
             show_tree: true,
             repo_path,
+            config,
             file_watcher: watcher,
             watcher_rx: rx,
             terminal_size: (0, 0),
@@ -121,6 +125,7 @@ impl App {
                         &self.repo_path,
                         &files,
                         diff_width,
+                        self.config.delta.args.clone(),
                     );
                     self.pending_diff = Some(rx);
                 }
@@ -132,6 +137,7 @@ impl App {
                     &path,
                     status,
                     diff_width,
+                    self.config.delta.args.clone(),
                 );
                 self.pending_diff = Some(rx);
             }
@@ -152,6 +158,7 @@ impl App {
                 status,
                 diff_width,
                 staged,
+                self.config.delta.args.clone(),
             );
             self.pending_diff = Some(rx);
         }

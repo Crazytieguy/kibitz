@@ -5,31 +5,7 @@ use ratatui::text::Text;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::mpsc;
-use std::sync::OnceLock;
 use std::thread;
-
-// Cache theme detection - only check once per session
-static IS_DARK: OnceLock<bool> = OnceLock::new();
-
-/// Detect if system is in dark mode (macOS) - cached
-fn is_dark_mode() -> bool {
-    *IS_DARK.get_or_init(|| {
-        Command::new("defaults")
-            .args(["read", "-g", "AppleInterfaceStyle"])
-            .output()
-            .map(|o| o.status.success())
-            .unwrap_or(false)
-    })
-}
-
-/// Get the delta features flag based on system theme
-fn delta_features() -> &'static str {
-    if is_dark_mode() {
-        "--features=protanopia-dark"
-    } else {
-        "--features=protanopia-light"
-    }
-}
 
 pub fn delta_available() -> bool {
     Command::new("delta")
@@ -46,6 +22,7 @@ pub struct DiffRequest {
     pub status: Option<FileStatus>,
     pub width: usize,
     pub staged: bool,
+    pub delta_args: Option<String>,
 }
 
 /// Spawn async diff loading, returns a receiver for the result
@@ -180,26 +157,26 @@ fn find_hunk_positions(content: &Text) -> Vec<usize> {
 
 fn build_diff_command(req: &DiffRequest) -> String {
     let file_path = req.file_path.to_string_lossy();
-    let features = delta_features();
+    let user_args = req.delta_args.as_deref().unwrap_or("");
 
     match req.status {
         Some(FileStatus::Untracked) => {
             // For untracked files, show content as new file
             format!(
                 "git diff --no-index --color=always -- /dev/null '{}' 2>/dev/null | delta --paging=never {} || cat '{}'",
-                file_path, features, file_path
+                file_path, user_args, file_path
             )
         }
         Some(s) if s.has_staged() && req.staged => {
             format!(
                 "git diff --cached --color=always -- '{}' | delta --paging=never {}",
-                file_path, features
+                file_path, user_args
             )
         }
         _ => {
             format!(
                 "git diff --color=always -- '{}' | delta --paging=never {}",
-                file_path, features
+                file_path, user_args
             )
         }
     }
@@ -210,10 +187,11 @@ pub fn get_diff(
     file_path: &Path,
     status: Option<FileStatus>,
     width: usize,
+    delta_args: Option<String>,
 ) -> mpsc::Receiver<DiffState> {
     // Default: show unstaged if file has both, otherwise show staged if only staged
     let staged = status.is_some_and(|s| !s.has_both() && s.has_staged());
-    get_diff_staged(repo_path, file_path, status, width, staged)
+    get_diff_staged(repo_path, file_path, status, width, staged, delta_args)
 }
 
 pub fn get_diff_staged(
@@ -222,6 +200,7 @@ pub fn get_diff_staged(
     status: Option<FileStatus>,
     width: usize,
     staged: bool,
+    delta_args: Option<String>,
 ) -> mpsc::Receiver<DiffState> {
     load_diff_async(DiffRequest {
         repo_path: repo_path.to_path_buf(),
@@ -229,6 +208,7 @@ pub fn get_diff_staged(
         status,
         width,
         staged,
+        delta_args,
     })
 }
 
@@ -237,13 +217,14 @@ pub fn get_diff_for_paths(
     repo_path: &Path,
     file_paths: &[std::path::PathBuf],
     width: usize,
+    delta_args: Option<String>,
 ) -> mpsc::Receiver<DiffState> {
     let (tx, rx) = mpsc::channel();
     let repo_path = repo_path.to_path_buf();
     let file_paths: Vec<_> = file_paths.to_vec();
 
     thread::spawn(move || {
-        let result = get_multi_diff_sync(&repo_path, &file_paths, width);
+        let result = get_multi_diff_sync(&repo_path, &file_paths, width, delta_args.as_deref());
         let _ = tx.send(result.unwrap_or_default());
     });
 
@@ -254,13 +235,14 @@ fn get_multi_diff_sync(
     repo_path: &Path,
     file_paths: &[std::path::PathBuf],
     width: usize,
+    delta_args: Option<&str>,
 ) -> Result<DiffState> {
     if file_paths.is_empty() {
         return Ok(DiffState::new());
     }
 
     // Build a command that diffs all files at once
-    let features = delta_features();
+    let user_args = delta_args.unwrap_or("");
     let files_arg: Vec<_> = file_paths
         .iter()
         .map(|p| format!("'{}'", p.to_string_lossy()))
@@ -269,7 +251,7 @@ fn get_multi_diff_sync(
     let diff_cmd = format!(
         "git diff --color=always -- {} | delta --paging=never {}",
         files_arg.join(" "),
-        features
+        user_args
     );
 
     let output = Command::new("script")

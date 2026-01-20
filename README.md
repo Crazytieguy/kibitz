@@ -10,6 +10,7 @@ A space-efficient terminal UI for viewing git diffs with file tree navigation an
 - **Hunk navigation** - Jump between diff hunks with `J`/`K`
 - **Hot reload** - Automatically refreshes when files change
 - **Toggle tree** - Hide/show file tree with `t` for full-width diff view
+- **Configurable** - TOML config for delta args and colors
 
 ## Requirements
 
@@ -62,10 +63,51 @@ All navigation uses `j`/`k` with modifiers:
 | `S` | Staged |
 | `±` | Has both staged and unstaged changes |
 
+## Configuration
+
+Configuration is loaded from TOML files in two locations (local overrides global):
+
+1. **Global**: `~/.config/git-diff-tui/config.toml`
+2. **Local**: `.git-diff-tui.toml` in repository root
+
+### Example Configuration
+
+```toml
+[delta]
+# Additional arguments passed to delta (appended after defaults)
+args = "--side-by-side --line-numbers"
+
+[colors]
+# Colors can be specified as:
+# - ANSI index (0-255): 4
+# - Named color: "blue", "red", "green", "yellow", "cyan", "magenta", "white", "black"
+# - Hex RGB: "#ff5500"
+
+folder = 4           # ANSI blue (default)
+modified = 3         # ANSI yellow (default)
+added = 2            # ANSI green (default)
+deleted = 1          # ANSI red (default)
+renamed = 6          # ANSI cyan (default)
+staged = 2           # ANSI green (default)
+staged_modified = 5  # ANSI magenta (default)
+untracked = 8        # ANSI bright black (default)
+```
+
+### Delta Arguments
+
+The `delta.args` field accepts any arguments supported by delta. These are appended after the default arguments (`--paging=never --features={theme}`). Common options:
+
+- `--side-by-side` - Side-by-side diff view
+- `--line-numbers` - Show line numbers
+- `--navigate` - Enable navigation markers
+- `--dark` / `--light` - Force color theme
+
+See [delta documentation](https://dandavison.github.io/delta/) for all options.
+
 ## Planned Features
 
 - **Commit history navigation** - When no uncommitted changes exist, show diffs from recent commits; navigate through commit history
-- **Configuration file** - TOML config for delta args, keybindings, colors
+- **Configurable keybindings** - Remap keys via config file
 - **CLI options** - Override config via command line (`--delta-args`, etc.)
 - **Theme hot-reload** - Respond to terminal theme change signals (SIGUSR1)
 
