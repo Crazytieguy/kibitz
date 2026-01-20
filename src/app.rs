@@ -120,83 +120,76 @@ impl App {
         let diff_width = self.get_diff_width();
 
         if self.history_position == 0 {
-            // Working tree - existing behavior
             self.request_working_tree_diff(diff_width);
         } else if let Some(commit) = &self.current_commit {
-            // Historical commit
             self.request_commit_diff(commit.oid_full.clone(), diff_width);
         } else {
-            self.diff_state = DiffState::new();
-            self.pending_diff = None;
+            self.clear_diff();
         }
     }
 
+    fn clear_diff(&mut self) {
+        self.diff_state = DiffState::new();
+        self.pending_diff = None;
+    }
+
     fn request_working_tree_diff(&mut self, diff_width: usize) {
-        if let Some((path, is_dir)) = self.file_tree.selected_path() {
-            if is_dir {
-                // Folder selected - get all files under it
-                let files = self.file_tree.files_under_path(&path);
-                if files.is_empty() {
-                    self.diff_state = DiffState::new();
-                    self.pending_diff = None;
-                } else {
-                    let rx = git::diff::get_diff_for_paths(
-                        &self.repo_path,
-                        &files,
-                        diff_width,
-                        self.config.delta.args.clone(),
-                    );
-                    self.pending_diff = Some(rx);
-                }
-            } else {
-                // Single file
-                let status = self.file_tree.get_file_status(&path);
-                let rx = git::diff::get_diff(
-                    &self.repo_path,
-                    &path,
-                    status,
-                    diff_width,
-                    self.config.delta.args.clone(),
-                );
-                self.pending_diff = Some(rx);
+        let Some((path, is_dir)) = self.file_tree.selected_path() else {
+            return self.clear_diff();
+        };
+
+        let delta_args = self.config.delta.args.clone();
+
+        if is_dir {
+            let files = self.file_tree.files_under_path(&path);
+            if files.is_empty() {
+                return self.clear_diff();
             }
+            self.pending_diff = Some(git::diff::get_diff_for_paths(
+                &self.repo_path,
+                &files,
+                diff_width,
+                delta_args,
+            ));
         } else {
-            self.diff_state = DiffState::new();
-            self.pending_diff = None;
+            let status = self.file_tree.get_file_status(&path);
+            self.pending_diff = Some(git::diff::get_diff(
+                &self.repo_path,
+                &path,
+                status,
+                diff_width,
+                delta_args,
+            ));
         }
     }
 
     fn request_commit_diff(&mut self, oid: String, diff_width: usize) {
-        if let Some((path, is_dir)) = self.file_tree.selected_path() {
-            if is_dir {
-                // Folder selected in commit - show full commit diff
-                let rx = git::diff::get_commit_diff(
-                    &self.repo_path,
-                    &oid,
-                    diff_width,
-                    self.config.delta.args.clone(),
-                );
-                self.pending_diff = Some(rx);
-            } else {
-                // Single file in commit
-                let rx = git::diff::get_commit_file_diff(
-                    &self.repo_path,
-                    &oid,
-                    &path,
-                    diff_width,
-                    self.config.delta.args.clone(),
-                );
-                self.pending_diff = Some(rx);
+        let Some((path, is_dir)) = self.file_tree.selected_path() else {
+            return self.clear_diff();
+        };
+
+        let delta_args = self.config.delta.args.clone();
+
+        if is_dir {
+            let files = self.file_tree.files_under_path(&path);
+            if files.is_empty() {
+                return self.clear_diff();
             }
-        } else {
-            // No file selected, show full commit diff
-            let rx = git::diff::get_commit_diff(
+            self.pending_diff = Some(git::diff::get_commit_files_diff(
                 &self.repo_path,
                 &oid,
+                &files,
                 diff_width,
-                self.config.delta.args.clone(),
-            );
-            self.pending_diff = Some(rx);
+                delta_args,
+            ));
+        } else {
+            self.pending_diff = Some(git::diff::get_commit_file_diff(
+                &self.repo_path,
+                &oid,
+                &path,
+                diff_width,
+                delta_args,
+            ));
         }
     }
 
