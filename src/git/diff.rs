@@ -4,7 +4,31 @@ use anyhow::Result;
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::sync::mpsc;
+use std::sync::OnceLock;
 use std::thread;
+
+// Cache theme detection - only check once per session
+static IS_DARK: OnceLock<bool> = OnceLock::new();
+
+/// Detect if system is in dark mode (macOS) - cached
+fn is_dark_mode() -> bool {
+    *IS_DARK.get_or_init(|| {
+        Command::new("defaults")
+            .args(["read", "-g", "AppleInterfaceStyle"])
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+    })
+}
+
+/// Get the delta features flag based on system theme
+fn delta_features() -> &'static str {
+    if is_dark_mode() {
+        "--features=protanopia-dark"
+    } else {
+        "--features=protanopia-light"
+    }
+}
 
 pub fn delta_available() -> bool {
     Command::new("delta")
@@ -134,25 +158,26 @@ fn filter_control_chars(input: &[u8]) -> Vec<u8> {
 
 fn build_diff_command(req: &DiffRequest) -> String {
     let file_path = req.file_path.to_string_lossy();
+    let features = delta_features();
 
     match req.status {
         Some(FileStatus::Untracked) => {
             // For untracked files, show content as new file
             format!(
-                "git diff --no-index --color=always -- /dev/null '{}' 2>/dev/null | delta --paging=never || cat '{}'",
-                file_path, file_path
+                "git diff --no-index --color=always -- /dev/null '{}' 2>/dev/null | delta --paging=never {} || cat '{}'",
+                file_path, features, file_path
             )
         }
         Some(s) if s.has_staged() && req.staged => {
             format!(
-                "git diff --cached --color=always -- '{}' | delta --paging=never",
-                file_path
+                "git diff --cached --color=always -- '{}' | delta --paging=never {}",
+                file_path, features
             )
         }
         _ => {
             format!(
-                "git diff --color=always -- '{}' | delta --paging=never",
-                file_path
+                "git diff --color=always -- '{}' | delta --paging=never {}",
+                file_path, features
             )
         }
     }

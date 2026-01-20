@@ -7,6 +7,15 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem},
 };
 
+// Use ANSI indexed colors (0-15) which respect terminal theme
+const BLUE: Color = Color::Indexed(4);      // ANSI blue
+const YELLOW: Color = Color::Indexed(3);    // ANSI yellow
+const GREEN: Color = Color::Indexed(2);     // ANSI green
+const RED: Color = Color::Indexed(1);       // ANSI red
+const CYAN: Color = Color::Indexed(6);      // ANSI cyan
+const MAGENTA: Color = Color::Indexed(5);   // ANSI magenta
+const BRIGHT_BLACK: Color = Color::Indexed(8); // For dimmed text
+
 pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree) {
     let visible = tree.visible_items();
     let items: Vec<ListItem> = visible
@@ -19,21 +28,21 @@ pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree) {
 
             if *is_dir {
                 let icon = if *expanded { "▼ " } else { "▶ " };
-                spans.push(Span::styled(icon, Style::default().fg(Color::Blue)));
+                spans.push(Span::styled(icon, Style::default().fg(BLUE)));
                 spans.push(Span::styled(
                     name.as_str(),
-                    Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD),
+                    Style::default().fg(BLUE).add_modifier(Modifier::BOLD),
                 ));
             } else {
                 let (icon, icon_color) = match status {
-                    Some(FileStatus::Modified) => ("M ", Color::Yellow),
-                    Some(FileStatus::Added) => ("A ", Color::Green),
-                    Some(FileStatus::Deleted) => ("D ", Color::Red),
-                    Some(FileStatus::Renamed) => ("R ", Color::Cyan),
-                    Some(FileStatus::Untracked) => ("? ", Color::Gray),
-                    Some(FileStatus::Staged) => ("S ", Color::Green),
-                    Some(FileStatus::StagedModified) => ("± ", Color::Magenta),
-                    None => ("  ", Color::White),
+                    Some(FileStatus::Modified) => ("M ", YELLOW),
+                    Some(FileStatus::Added) => ("A ", GREEN),
+                    Some(FileStatus::Deleted) => ("D ", RED),
+                    Some(FileStatus::Renamed) => ("R ", CYAN),
+                    Some(FileStatus::Untracked) => ("? ", BRIGHT_BLACK),
+                    Some(FileStatus::Staged) => ("S ", GREEN),
+                    Some(FileStatus::StagedModified) => ("± ", MAGENTA),
+                    None => ("  ", Color::Reset),
                 };
                 spans.push(Span::styled(icon, Style::default().fg(icon_color)));
                 spans.push(Span::raw(name.as_str()));
@@ -42,9 +51,10 @@ pub fn render(frame: &mut Frame, area: Rect, tree: &FileTree) {
             let mut item = ListItem::new(Line::from(spans));
 
             if i == tree.selected_index {
+                // Use reverse video for selection - works with any theme
                 item = item.style(
                     Style::default()
-                        .bg(Color::DarkGray)
+                        .add_modifier(Modifier::REVERSED)
                         .add_modifier(Modifier::BOLD),
                 );
             }

@@ -41,18 +41,39 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
             app.diff_state.prev_hunk();
         }
 
-        // Diff scrolling
+        // Diff scrolling - half page
         (KeyCode::Char('d'), KeyModifiers::CONTROL) => {
-            app.diff_state.scroll_down(10);
+            app.diff_state.scroll_down(15);
         }
         (KeyCode::Char('u'), KeyModifiers::CONTROL) => {
-            app.diff_state.scroll_up(10);
+            app.diff_state.scroll_up(15);
         }
+
+        // Diff scrolling - full page
+        (KeyCode::PageDown, _) | (KeyCode::Char(' '), KeyModifiers::NONE) => {
+            app.diff_state.scroll_down(30);
+        }
+        (KeyCode::PageUp, _) => {
+            app.diff_state.scroll_up(30);
+        }
+
+        // Diff scrolling - single line (vim style)
+        (KeyCode::Char('e'), KeyModifiers::CONTROL) => {
+            app.diff_state.scroll_down(1);
+        }
+        (KeyCode::Char('y'), KeyModifiers::CONTROL) => {
+            app.diff_state.scroll_up(1);
+        }
+
+        // Diff scrolling - top/bottom
         (KeyCode::Char('g'), KeyModifiers::NONE) => {
             app.diff_state.scroll_to_top();
         }
-        (KeyCode::Char('G'), KeyModifiers::SHIFT) => {
+        (KeyCode::Char('G'), KeyModifiers::SHIFT) | (KeyCode::End, _) => {
             app.diff_state.scroll_to_bottom();
+        }
+        (KeyCode::Home, _) => {
+            app.diff_state.scroll_to_top();
         }
 
         // Toggle tree visibility

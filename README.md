@@ -38,8 +38,12 @@ git-diff-tui
 | `l`/`Enter`/`→` | Expand folder |
 | `h`/`←` | Collapse folder / go to parent |
 | `J`/`K` (shift) | Next / prev hunk |
+| `Space`/`PageDown` | Page down diff |
+| `PageUp` | Page up diff |
 | `Ctrl-d`/`Ctrl-u` | Half-page scroll diff |
-| `g`/`G` | Top / bottom of diff |
+| `Ctrl-e`/`Ctrl-y` | Single line scroll diff |
+| `g`/`Home` | Top of diff |
+| `G`/`End` | Bottom of diff |
 | Mouse scroll | Scroll diff |
 | `t` | Toggle file tree visibility |
 | `s` | Toggle staged/unstaged (when file has both) |
