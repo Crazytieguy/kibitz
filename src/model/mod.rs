@@ -4,4 +4,4 @@ mod tree;
 
 pub use commit::CommitInfo;
 pub use diff_state::DiffState;
-pub use tree::{FileStatus, FileTree};
+pub use tree::{FileStatus, FileTree, HorizontalItem};

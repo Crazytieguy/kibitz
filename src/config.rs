@@ -2,11 +2,37 @@ use ratatui::style::Color;
 use serde::Deserialize;
 use std::path::Path;
 
+/// Layout mode for the file tree
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LayoutMode {
+    #[default]
+    Vertical,
+    Horizontal,
+}
+
+/// Layout configuration
+#[derive(Debug, Clone)]
+pub struct LayoutConfig {
+    pub mode: LayoutMode,
+    pub max_rows: u16,
+}
+
+impl Default for LayoutConfig {
+    fn default() -> Self {
+        Self {
+            mode: LayoutMode::Vertical,
+            max_rows: 5,
+        }
+    }
+}
+
 /// Top-level configuration
 #[derive(Debug, Clone, Default)]
 pub struct Config {
     pub delta: DeltaConfig,
     pub colors: ColorConfig,
+    pub layout: LayoutConfig,
 }
 
 /// Delta pass-through configuration
@@ -91,12 +117,21 @@ fn parse_hex_color(s: &str) -> Option<Color> {
     Some(Color::Rgb(r, g, b))
 }
 
+/// Raw layout config with optional fields for merging
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+struct RawLayoutConfig {
+    mode: Option<LayoutMode>,
+    max_rows: Option<u16>,
+}
+
 /// Raw config as parsed from TOML (uses Option for merge semantics)
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(default)]
 struct RawConfig {
     delta: Option<DeltaConfig>,
     colors: Option<RawColorConfig>,
+    layout: Option<RawLayoutConfig>,
 }
 
 /// Raw color config with optional fields for merging
@@ -164,6 +199,15 @@ impl Config {
             apply(&mut self.colors.staged, colors.staged);
             apply(&mut self.colors.staged_modified, colors.staged_modified);
             apply(&mut self.colors.untracked, colors.untracked);
+        }
+
+        if let Some(layout) = raw.layout {
+            if let Some(mode) = layout.mode {
+                self.layout.mode = mode;
+            }
+            if let Some(max_rows) = layout.max_rows {
+                self.layout.max_rows = max_rows;
+            }
         }
     }
 }

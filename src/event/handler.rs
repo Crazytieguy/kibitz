@@ -1,4 +1,5 @@
 use crate::app::App;
+use crate::config::LayoutMode;
 use anyhow::Result;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent, MouseEventKind};
 
@@ -11,12 +12,18 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
 
         // === j/k family - all navigation ===
 
-        // j/k alone - navigate file tree
+        // j/k alone - navigate file tree (layout-dependent)
         (KeyCode::Char('j'), KeyModifiers::NONE) | (KeyCode::Down, KeyModifiers::NONE) => {
-            app.navigate_tree(|tree| tree.move_down());
+            match app.config.layout.mode {
+                LayoutMode::Vertical => app.navigate_tree(|tree| tree.move_down()),
+                LayoutMode::Horizontal => app.navigate_tree(|tree| tree.move_to_child()),
+            }
         }
         (KeyCode::Char('k'), KeyModifiers::NONE) | (KeyCode::Up, KeyModifiers::NONE) => {
-            app.navigate_tree(|tree| tree.move_up());
+            match app.config.layout.mode {
+                LayoutMode::Vertical => app.navigate_tree(|tree| tree.move_up()),
+                LayoutMode::Horizontal => app.navigate_tree(|tree| tree.move_to_parent()),
+            }
         }
 
         // Alt+j/k - scroll diff line by line
@@ -43,12 +50,18 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
             app.diff_state.prev_hunk();
         }
 
-        // === File tree expansion ===
-        (KeyCode::Char('l') | KeyCode::Right | KeyCode::Enter, KeyModifiers::NONE) => {
+        // === File tree expansion / sibling navigation (layout-dependent) ===
+        (KeyCode::Char('l') | KeyCode::Right, KeyModifiers::NONE) => match app.config.layout.mode {
+            LayoutMode::Vertical => app.file_tree.expand(),
+            LayoutMode::Horizontal => app.navigate_tree(|tree| tree.move_to_next_sibling()),
+        },
+        (KeyCode::Char('h') | KeyCode::Left, KeyModifiers::NONE) => match app.config.layout.mode {
+            LayoutMode::Vertical => app.file_tree.collapse(),
+            LayoutMode::Horizontal => app.navigate_tree(|tree| tree.move_to_prev_sibling()),
+        },
+        // Enter always expands/enters in both modes
+        (KeyCode::Enter, KeyModifiers::NONE) => {
             app.file_tree.expand();
-        }
-        (KeyCode::Char('h') | KeyCode::Left, KeyModifiers::NONE) => {
-            app.file_tree.collapse();
         }
 
         // === Additional scroll keys ===

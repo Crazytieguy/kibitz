@@ -1,3 +1,4 @@
+use crate::config::LayoutMode;
 use crate::model::FileTree;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 
@@ -8,6 +9,19 @@ const TREE_PADDING: u16 = 4; // For icon, spacing, and border
 pub struct Areas {
     pub tree: Rect,
     pub diff: Rect,
+}
+
+pub fn create_layout_for_mode(
+    area: Rect,
+    show_tree: bool,
+    file_tree: &FileTree,
+    mode: LayoutMode,
+    max_rows: u16,
+) -> Areas {
+    match mode {
+        LayoutMode::Vertical => create_layout(area, show_tree, file_tree),
+        LayoutMode::Horizontal => create_horizontal_layout(area, show_tree, file_tree, max_rows),
+    }
 }
 
 pub fn create_layout(area: Rect, show_tree: bool, file_tree: &FileTree) -> Areas {
@@ -47,4 +61,32 @@ fn calculate_tree_width(file_tree: &FileTree, max_available: u16) -> u16 {
     // Clamp to min/max and don't exceed half the screen
     let max_allowed = (max_available / 2).max(MIN_TREE_WIDTH);
     desired_width.clamp(MIN_TREE_WIDTH, MAX_TREE_WIDTH.min(max_allowed))
+}
+
+fn create_horizontal_layout(
+    area: Rect,
+    show_tree: bool,
+    file_tree: &FileTree,
+    max_rows: u16,
+) -> Areas {
+    if show_tree {
+        let rows = file_tree.get_horizontal_rows();
+        // Each row needs 1 line, plus 2 for borders
+        let tree_height = ((rows.len() as u16) + 2).min(max_rows + 2);
+
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Min(1), Constraint::Length(tree_height)])
+            .split(area);
+
+        Areas {
+            diff: chunks[0],
+            tree: chunks[1],
+        }
+    } else {
+        Areas {
+            tree: Rect::default(),
+            diff: area,
+        }
+    }
 }
