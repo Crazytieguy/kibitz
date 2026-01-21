@@ -19,8 +19,30 @@ A terminal UI for kibitzing on your coding agent's changes. Watch git diffs in r
 
 ## Installation
 
+### Homebrew (macOS/Linux)
+
 ```bash
-cargo install --path .
+brew install Crazytieguy/tap/kibitz
+```
+
+### Cargo
+
+```bash
+cargo install kibitz
+```
+
+### Pre-built binaries
+
+Download from [GitHub Releases](https://github.com/Crazytieguy/kibitz/releases).
+
+Or use the install script:
+
+```bash
+# macOS/Linux
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Crazytieguy/kibitz/releases/latest/download/kibitz-installer.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://github.com/Crazytieguy/kibitz/releases/latest/download/kibitz-installer.ps1 | iex"
 ```
 
 ## Usage

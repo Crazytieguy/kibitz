@@ -2,6 +2,15 @@
 name = "kibitz"
 version = "0.1.0"
 edition = "2024"
+authors = ["Yoav Tzfati <yoav.tzfati@gmail.com>"]
+description = "A terminal UI for kibitzing on your coding agent's changes"
+license = "MIT"
+repository = "https://github.com/Crazytieguy/kibitz"
+homepage = "https://github.com/Crazytieguy/kibitz"
+readme = "README.md"
+keywords = ["git", "diff", "tui", "terminal", "delta"]
+categories = ["command-line-utilities", "development-tools"]
+exclude = [".github/", ".kibitz.toml"]
 
 [dependencies]
 ansi-to-tui = "8.0.1"
@@ -15,3 +24,7 @@ portable-pty = "0.9.0"
 ratatui = "0.30.0"
 serde = { version = "1.0.228", features = ["derive"] }
 toml = "0.9.11"
+
+[profile.dist]
+inherits = "release"
+lto = "thin"
