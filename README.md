@@ -15,7 +15,16 @@ A terminal UI for kibitzing on your coding agent's changes. Watch git diffs in r
 
 ## Requirements
 
-- **delta** - Must be installed and in PATH. Install from: https://github.com/dandavison/delta
+- **delta** - Must be installed and in PATH:
+  ```bash
+  # macOS
+  brew install git-delta
+
+  # Cargo
+  cargo install git-delta
+
+  # Other: https://dandavison.github.io/delta/installation.html
+  ```
 
 ## Installation
 
@@ -35,14 +44,10 @@ cargo install kibitz
 
 Download from [GitHub Releases](https://github.com/Crazytieguy/kibitz/releases).
 
-Or use the install script:
+Or use the install script (macOS/Linux):
 
 ```bash
-# macOS/Linux
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/Crazytieguy/kibitz/releases/latest/download/kibitz-installer.sh | sh
-
-# Windows (PowerShell)
-powershell -ExecutionPolicy ByPass -c "irm https://github.com/Crazytieguy/kibitz/releases/latest/download/kibitz-installer.ps1 | iex"
 ```
 
 ## Usage
