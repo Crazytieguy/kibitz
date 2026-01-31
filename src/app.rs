@@ -122,12 +122,11 @@ impl App {
     pub fn request_diff(&mut self) {
         let diff_width = self.get_diff_width();
 
-        if self.history_position == 0 {
-            self.request_working_tree_diff(diff_width);
-        } else if let Some(commit) = &self.current_commit {
+        // Check current_commit first - it's set before history_position is updated
+        if let Some(commit) = &self.current_commit {
             self.request_commit_diff(commit.oid_full.clone(), diff_width);
         } else {
-            self.clear_diff();
+            self.request_working_tree_diff(diff_width);
         }
     }
 
