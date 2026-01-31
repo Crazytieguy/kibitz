@@ -121,6 +121,10 @@ success = 2          # Added/staged files (default: ANSI green)
 warning = 3          # Modified files (default: ANSI yellow)
 error = 1            # Deleted files (default: ANSI red)
 info = 6             # Renamed files (default: ANSI cyan)
+
+[layout]
+mode = "vertical"    # "vertical" (tree on left) or "horizontal" (tree on bottom)
+max_rows = 5         # Max rows for file tree in horizontal mode
 ```
 
 ### Delta Arguments
