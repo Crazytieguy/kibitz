@@ -1,4 +1,4 @@
-use crate::event::keybindings::{KEYBINDINGS, KeyCategory};
+use crate::event::{KEYBINDINGS, KeyCategory};
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
