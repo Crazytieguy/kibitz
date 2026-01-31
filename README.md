@@ -60,19 +60,19 @@ kibitz
 
 ## Keybindings
 
-All navigation uses `j`/`k` with modifiers:
+Arrow keys and `j`/`k` are interchangeable. Press `?` for in-app help.
 
 | Key | Action |
 |-----|--------|
 | `q` | Quit |
-| `j`/`k` | Navigate file tree |
-| `Alt+j`/`Alt+k` | Scroll diff line by line |
-| `Ctrl+j`/`Ctrl+k` | Scroll diff half page |
-| `Shift+J`/`Shift+K` | Next / prev hunk |
+| `?` | Show help |
+| `j`/`k` or `↓`/`↑` | Navigate file tree |
+| `Alt+j`/`Alt+k` or `Alt+↓`/`Alt+↑` | Scroll diff line by line |
+| `Ctrl+j`/`Ctrl+k` or `PageUp`/`PageDown` | Scroll diff half page |
+| `Shift+J`/`Shift+K` or `Shift+↓`/`Shift+↑` | Next / prev hunk |
 | `l`/`Enter`/`→` | Expand folder |
 | `h`/`←` | Collapse folder / go to parent |
-| `Space`/`PageDown` | Page down diff |
-| `PageUp` | Page up diff |
+| `Space` | Page down diff |
 | `g`/`Home` | Top of diff |
 | `G`/`End` | Bottom of diff |
 | Mouse scroll | Scroll diff |
@@ -136,6 +136,7 @@ See [delta documentation](https://dandavison.github.io/delta/) for all options.
 
 ## Planned Features
 
+- **Semantic color palette** - Unify colors across UI with semantic names (text-primary, text-muted, accent, etc.) instead of per-element colors
 - **Configurable keybindings** - Remap keys via config file
 - **CLI options** - Override config via command line (`--delta-args`, etc.)
 - **Theme hot-reload** - Respond to terminal theme change signals (SIGUSR1)

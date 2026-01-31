@@ -9,6 +9,7 @@ const TREE_PADDING: u16 = 4; // For icon, spacing, and border
 pub struct Areas {
     pub tree: Rect,
     pub diff: Rect,
+    pub hint: Rect,
 }
 
 pub fn create_layout_for_mode(
@@ -18,29 +19,47 @@ pub fn create_layout_for_mode(
     mode: LayoutMode,
     max_rows: u16,
 ) -> Areas {
+    let (main_area, hint) = split_hint_area(area);
+
     match mode {
-        LayoutMode::Vertical => create_layout(area, show_tree, file_tree),
-        LayoutMode::Horizontal => create_horizontal_layout(area, show_tree, file_tree, max_rows),
+        LayoutMode::Vertical => create_vertical_areas(main_area, hint, show_tree, file_tree),
+        LayoutMode::Horizontal => {
+            create_horizontal_areas(main_area, hint, show_tree, file_tree, max_rows)
+        }
     }
 }
 
-pub fn create_layout(area: Rect, show_tree: bool, file_tree: &FileTree) -> Areas {
-    if show_tree {
-        let tree_width = calculate_tree_width(file_tree, area.width);
+fn split_hint_area(area: Rect) -> (Rect, Rect) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(1), Constraint::Length(1)])
+        .split(area);
+    (chunks[0], chunks[1])
+}
 
+fn create_vertical_areas(
+    main_area: Rect,
+    hint: Rect,
+    show_tree: bool,
+    file_tree: &FileTree,
+) -> Areas {
+    if show_tree {
+        let tree_width = calculate_tree_width(file_tree, main_area.width);
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Length(tree_width), Constraint::Min(1)])
-            .split(area);
+            .split(main_area);
 
         Areas {
             tree: chunks[0],
             diff: chunks[1],
+            hint,
         }
     } else {
         Areas {
             tree: Rect::default(),
-            diff: area,
+            diff: main_area,
+            hint,
         }
     }
 }
@@ -63,30 +82,32 @@ fn calculate_tree_width(file_tree: &FileTree, max_available: u16) -> u16 {
     desired_width.clamp(MIN_TREE_WIDTH, MAX_TREE_WIDTH.min(max_allowed))
 }
 
-fn create_horizontal_layout(
-    area: Rect,
+fn create_horizontal_areas(
+    main_area: Rect,
+    hint: Rect,
     show_tree: bool,
     file_tree: &FileTree,
     max_rows: u16,
 ) -> Areas {
     if show_tree {
-        let rows = file_tree.get_horizontal_rows();
-        // Each row needs 1 line, plus 2 for borders
-        let tree_height = ((rows.len() as u16) + 2).min(max_rows + 2);
+        let row_count = file_tree.get_horizontal_rows().len() as u16;
+        let tree_height = (row_count + 2).min(max_rows + 2);
 
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Min(1), Constraint::Length(tree_height)])
-            .split(area);
+            .split(main_area);
 
         Areas {
             diff: chunks[0],
             tree: chunks[1],
+            hint,
         }
     } else {
         Areas {
             tree: Rect::default(),
-            diff: area,
+            diff: main_area,
+            hint,
         }
     }
 }

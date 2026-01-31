@@ -4,11 +4,28 @@ use anyhow::Result;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent, MouseEventKind};
 
 /// Handle key events. Returns true if the app should quit.
+/// Keep in sync with keybindings.rs!
 pub fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
+    // Handle help popup first - it captures most keys when open
+    if app.show_help {
+        match key.code {
+            KeyCode::Char('?') | KeyCode::Char('q') | KeyCode::Esc => {
+                app.show_help = false;
+            }
+            _ => {}
+        }
+        return Ok(false);
+    }
+
     match (key.code, key.modifiers) {
         // Quit
         (KeyCode::Char('q'), KeyModifiers::NONE) => return Ok(true),
         (KeyCode::Char('c'), KeyModifiers::CONTROL) => return Ok(true),
+
+        // Help
+        (KeyCode::Char('?'), KeyModifiers::NONE) => {
+            app.show_help = true;
+        }
 
         // === j/k family - all navigation ===
 
@@ -26,11 +43,11 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
             }
         }
 
-        // Alt+j/k - scroll diff line by line
-        (KeyCode::Char('j'), KeyModifiers::ALT) => {
+        // Alt+j/k or Alt+arrows - scroll diff line by line
+        (KeyCode::Char('j'), KeyModifiers::ALT) | (KeyCode::Down, KeyModifiers::ALT) => {
             app.diff_state.scroll_down(1);
         }
-        (KeyCode::Char('k'), KeyModifiers::ALT) => {
+        (KeyCode::Char('k'), KeyModifiers::ALT) | (KeyCode::Up, KeyModifiers::ALT) => {
             app.diff_state.scroll_up(1);
         }
 
@@ -42,11 +59,11 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
             app.diff_state.scroll_up(15);
         }
 
-        // Shift+J/K - next/prev hunk
-        (KeyCode::Char('J'), KeyModifiers::SHIFT) => {
+        // Shift+J/K or Shift+arrows - next/prev hunk
+        (KeyCode::Char('J'), KeyModifiers::SHIFT) | (KeyCode::Down, KeyModifiers::SHIFT) => {
             app.diff_state.next_hunk();
         }
-        (KeyCode::Char('K'), KeyModifiers::SHIFT) => {
+        (KeyCode::Char('K'), KeyModifiers::SHIFT) | (KeyCode::Up, KeyModifiers::SHIFT) => {
             app.diff_state.prev_hunk();
         }
 
@@ -65,11 +82,14 @@ pub fn handle_key(app: &mut App, key: KeyEvent) -> Result<bool> {
         }
 
         // === Additional scroll keys ===
-        (KeyCode::PageDown, _) | (KeyCode::Char(' '), KeyModifiers::NONE) => {
+        (KeyCode::Char(' '), KeyModifiers::NONE) => {
             app.diff_state.scroll_down(30);
         }
+        (KeyCode::PageDown, _) => {
+            app.diff_state.scroll_down(15);
+        }
         (KeyCode::PageUp, _) => {
-            app.diff_state.scroll_up(30);
+            app.diff_state.scroll_up(15);
         }
         (KeyCode::Char('g'), KeyModifiers::NONE) | (KeyCode::Home, _) => {
             app.diff_state.scroll_to_top();

@@ -1,5 +1,6 @@
 mod diff_view;
 mod file_tree;
+mod help;
 mod layout;
 
 use crate::app::App;
@@ -44,4 +45,12 @@ pub fn render(frame: &mut Frame, app: &App) {
         &app.diff_state,
         app.current_commit.as_ref(),
     );
+
+    // Render hint line at bottom
+    help::render_hint_line(frame, areas.hint);
+
+    // Render help popup on top if active
+    if app.show_help {
+        help::render_help_popup(frame);
+    }
 }

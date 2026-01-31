@@ -14,6 +14,7 @@ pub struct App {
     pub file_tree: FileTree,
     pub diff_state: DiffState,
     pub show_tree: bool,
+    pub show_help: bool,
     pub repo_path: PathBuf,
     pub config: Config,
     /// History position: 0 = working tree, 1 = HEAD, 2 = HEAD~1, etc.
@@ -40,6 +41,7 @@ impl App {
             file_tree,
             diff_state: DiffState::new(),
             show_tree: true,
+            show_help: false,
             repo_path,
             config,
             history_position: 0,
