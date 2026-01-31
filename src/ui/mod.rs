@@ -44,13 +44,14 @@ pub fn render(frame: &mut Frame, app: &App) {
         areas.diff,
         &app.diff_state,
         app.current_commit.as_ref(),
+        &app.config.colors,
     );
 
     // Render hint line at bottom
-    help::render_hint_line(frame, areas.hint);
+    help::render_hint_line(frame, areas.hint, &app.config.colors);
 
     // Render help popup on top if active
     if app.show_help {
-        help::render_help_popup(frame);
+        help::render_help_popup(frame, &app.config.colors);
     }
 }

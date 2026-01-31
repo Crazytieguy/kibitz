@@ -44,30 +44,28 @@ pub struct DeltaConfig {
     pub args: Option<String>,
 }
 
-/// File status colors configuration
+/// Semantic color configuration
 #[derive(Debug, Clone)]
 pub struct ColorConfig {
-    pub folder: Color,
-    pub modified: Color,
-    pub added: Color,
-    pub deleted: Color,
-    pub renamed: Color,
-    pub staged: Color,
-    pub staged_modified: Color,
-    pub untracked: Color,
+    pub text: Color,
+    pub text_muted: Color,
+    pub accent: Color,
+    pub success: Color,
+    pub warning: Color,
+    pub error: Color,
+    pub info: Color,
 }
 
 impl Default for ColorConfig {
     fn default() -> Self {
         Self {
-            folder: Color::Indexed(4),          // ANSI blue
-            modified: Color::Indexed(3),        // ANSI yellow
-            added: Color::Indexed(2),           // ANSI green
-            deleted: Color::Indexed(1),         // ANSI red
-            renamed: Color::Indexed(6),         // ANSI cyan
-            staged: Color::Indexed(2),          // ANSI green
-            staged_modified: Color::Indexed(5), // ANSI magenta
-            untracked: Color::Indexed(8),       // ANSI bright black
+            text: Color::Reset,          // Terminal default
+            text_muted: Color::DarkGray, // Subtle UI elements
+            accent: Color::Indexed(4),   // ANSI blue (folders, borders, headers)
+            success: Color::Indexed(2),  // ANSI green (added, staged)
+            warning: Color::Indexed(3),  // ANSI yellow (modified)
+            error: Color::Indexed(1),    // ANSI red (deleted)
+            info: Color::Indexed(6),     // ANSI cyan (renamed)
         }
     }
 }
@@ -138,14 +136,13 @@ struct RawConfig {
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(default)]
 struct RawColorConfig {
-    folder: Option<ColorValue>,
-    modified: Option<ColorValue>,
-    added: Option<ColorValue>,
-    deleted: Option<ColorValue>,
-    renamed: Option<ColorValue>,
-    staged: Option<ColorValue>,
-    staged_modified: Option<ColorValue>,
-    untracked: Option<ColorValue>,
+    text: Option<ColorValue>,
+    text_muted: Option<ColorValue>,
+    accent: Option<ColorValue>,
+    success: Option<ColorValue>,
+    warning: Option<ColorValue>,
+    error: Option<ColorValue>,
+    info: Option<ColorValue>,
 }
 
 impl Config {
@@ -191,14 +188,13 @@ impl Config {
                     *target = v.to_color();
                 }
             };
-            apply(&mut self.colors.folder, colors.folder);
-            apply(&mut self.colors.modified, colors.modified);
-            apply(&mut self.colors.added, colors.added);
-            apply(&mut self.colors.deleted, colors.deleted);
-            apply(&mut self.colors.renamed, colors.renamed);
-            apply(&mut self.colors.staged, colors.staged);
-            apply(&mut self.colors.staged_modified, colors.staged_modified);
-            apply(&mut self.colors.untracked, colors.untracked);
+            apply(&mut self.colors.text, colors.text);
+            apply(&mut self.colors.text_muted, colors.text_muted);
+            apply(&mut self.colors.accent, colors.accent);
+            apply(&mut self.colors.success, colors.success);
+            apply(&mut self.colors.warning, colors.warning);
+            apply(&mut self.colors.error, colors.error);
+            apply(&mut self.colors.info, colors.info);
         }
 
         if let Some(layout) = raw.layout {

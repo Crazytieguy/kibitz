@@ -1,13 +1,20 @@
+use crate::config::ColorConfig;
 use crate::model::{CommitInfo, DiffState, STICKY_FILE_HEADER_HEIGHT};
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Style},
+    style::Style,
     text::{Line, Text},
     widgets::{Block, Borders, Clear, Paragraph, Wrap},
 };
 
-pub fn render(frame: &mut Frame, area: Rect, state: &DiffState, commit: Option<&CommitInfo>) {
+pub fn render(
+    frame: &mut Frame,
+    area: Rect,
+    state: &DiffState,
+    commit: Option<&CommitInfo>,
+    colors: &ColorConfig,
+) {
     let title = build_title(state, commit);
 
     let hunk_info = if !state.hunk_positions.is_empty() {
@@ -78,7 +85,7 @@ pub fn render(frame: &mut Frame, area: Rect, state: &DiffState, commit: Option<&
                 scrollbar_x,
                 scrollbar_y,
                 "█",
-                Style::default().fg(Color::DarkGray),
+                Style::default().fg(colors.text_muted),
             );
         }
     }

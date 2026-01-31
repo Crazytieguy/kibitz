@@ -108,19 +108,19 @@ Configuration is loaded from TOML files in two locations (local overrides global
 args = "--side-by-side --line-numbers"
 
 [colors]
+# Semantic color palette for consistent theming
 # Colors can be specified as:
 # - ANSI index (0-255): 4
 # - Named color: "blue", "red", "green", "yellow", "cyan", "magenta", "white", "black"
 # - Hex RGB: "#ff5500"
 
-folder = 4           # ANSI blue (default)
-modified = 3         # ANSI yellow (default)
-added = 2            # ANSI green (default)
-deleted = 1          # ANSI red (default)
-renamed = 6          # ANSI cyan (default)
-staged = 2           # ANSI green (default)
-staged_modified = 5  # ANSI magenta (default)
-untracked = 8        # ANSI bright black (default)
+text = "white"       # Primary text (hints, descriptions). Default: terminal default
+text_muted = "darkgray"  # Subtle UI elements (scrollbar, untracked files)
+accent = 4           # Folders, borders, headers (default: ANSI blue)
+success = 2          # Added/staged files (default: ANSI green)
+warning = 3          # Modified files (default: ANSI yellow)
+error = 1            # Deleted files (default: ANSI red)
+info = 6             # Renamed files (default: ANSI cyan)
 ```
 
 ### Delta Arguments
@@ -136,7 +136,6 @@ See [delta documentation](https://dandavison.github.io/delta/) for all options.
 
 ## Planned Features
 
-- **Semantic color palette** - Unify colors across UI with semantic names (text-primary, text-muted, accent, etc.) instead of per-element colors
 - **Configurable keybindings** - Remap keys via config file
 - **CLI options** - Override config via command line (`--delta-args`, etc.)
 - **Theme hot-reload** - Respond to terminal theme change signals (SIGUSR1)

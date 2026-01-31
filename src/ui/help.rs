@@ -1,36 +1,37 @@
+use crate::config::ColorConfig;
 use crate::event::{KEYBINDINGS, KeyCategory};
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
 };
 
-pub fn render_hint_line(frame: &mut Frame, area: Rect) {
-    let hint = Paragraph::new(" Press ? for help").style(Style::default().fg(Color::DarkGray));
+pub fn render_hint_line(frame: &mut Frame, area: Rect, colors: &ColorConfig) {
+    let hint = Paragraph::new(" Press ? for help").style(Style::default().fg(colors.text));
     frame.render_widget(hint, area);
 }
 
-pub fn render_help_popup(frame: &mut Frame) {
+pub fn render_help_popup(frame: &mut Frame, colors: &ColorConfig) {
     let area = centered_rect(60, 70, frame.area());
 
     // Clear the area behind the popup
     frame.render_widget(Clear, area);
 
-    let content = build_help_content();
+    let content = build_help_content(colors);
 
     let popup = Paragraph::new(content).block(
         Block::default()
             .title(" Keyboard Shortcuts ")
             .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Cyan)),
+            .border_style(Style::default().fg(colors.accent)),
     );
 
     frame.render_widget(popup, area);
 }
 
-fn build_help_content() -> Vec<Line<'static>> {
+fn build_help_content(colors: &ColorConfig) -> Vec<Line<'static>> {
     let max_key_width = KEYBINDINGS
         .iter()
         .map(|b| b.keys.chars().count())
@@ -41,8 +42,8 @@ fn build_help_content() -> Vec<Line<'static>> {
     let category_style = Style::default()
         .add_modifier(Modifier::BOLD)
         .add_modifier(Modifier::UNDERLINED)
-        .fg(Color::Cyan);
-    let key_style = Style::default().fg(Color::Yellow);
+        .fg(colors.accent);
+    let key_style = Style::default().fg(colors.accent);
 
     let mut lines = vec![Line::from("")];
     let mut current_category: Option<KeyCategory> = None;
@@ -71,7 +72,7 @@ fn build_help_content() -> Vec<Line<'static>> {
     lines.push(Line::from(""));
     lines.push(Line::from(Span::styled(
         "  Press ?, q, or Esc to close",
-        Style::default().fg(Color::DarkGray),
+        Style::default().fg(colors.text),
     )));
 
     lines

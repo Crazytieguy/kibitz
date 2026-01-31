@@ -3,10 +3,27 @@ use crate::model::{CommitInfo, FileStatus, FileTree, HorizontalItem};
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph},
 };
+
+/// Returns the status icon and semantic color for a file status.
+fn status_icon_and_color(
+    status: Option<FileStatus>,
+    colors: &ColorConfig,
+) -> (&'static str, ratatui::style::Color) {
+    match status {
+        Some(FileStatus::Modified) => ("M ", colors.warning),
+        Some(FileStatus::Added) => ("A ", colors.success),
+        Some(FileStatus::Deleted) => ("D ", colors.error),
+        Some(FileStatus::Renamed) => ("R ", colors.info),
+        Some(FileStatus::Untracked) => ("? ", colors.text_muted),
+        Some(FileStatus::Staged) => ("S ", colors.success),
+        Some(FileStatus::StagedModified) => ("± ", colors.warning),
+        None => ("  ", ratatui::style::Color::Reset),
+    }
+}
 
 pub fn render(
     frame: &mut Frame,
@@ -26,24 +43,15 @@ pub fn render(
 
             if node.is_dir {
                 let icon = if node.expanded { "▼ " } else { "▶ " };
-                spans.push(Span::styled(icon, Style::default().fg(colors.folder)));
+                spans.push(Span::styled(icon, Style::default().fg(colors.accent)));
                 spans.push(Span::styled(
                     node.name.as_str(),
                     Style::default()
-                        .fg(colors.folder)
+                        .fg(colors.accent)
                         .add_modifier(Modifier::BOLD),
                 ));
             } else {
-                let (icon, icon_color) = match node.status {
-                    Some(FileStatus::Modified) => ("M ", colors.modified),
-                    Some(FileStatus::Added) => ("A ", colors.added),
-                    Some(FileStatus::Deleted) => ("D ", colors.deleted),
-                    Some(FileStatus::Renamed) => ("R ", colors.renamed),
-                    Some(FileStatus::Untracked) => ("? ", colors.untracked),
-                    Some(FileStatus::Staged) => ("S ", colors.staged),
-                    Some(FileStatus::StagedModified) => ("± ", colors.staged_modified),
-                    None => ("  ", Color::Reset),
-                };
+                let (icon, icon_color) = status_icon_and_color(node.status, colors);
                 spans.push(Span::styled(icon, Style::default().fg(icon_color)));
                 spans.push(Span::raw(node.name.as_str()));
             }
@@ -117,16 +125,7 @@ fn render_horizontal_item(item: &HorizontalItem, colors: &ColorConfig) -> Vec<Sp
 
     // Status icon for files
     if !item.is_dir {
-        let (icon, icon_color) = match item.status {
-            Some(FileStatus::Modified) => ("M ", colors.modified),
-            Some(FileStatus::Added) => ("A ", colors.added),
-            Some(FileStatus::Deleted) => ("D ", colors.deleted),
-            Some(FileStatus::Renamed) => ("R ", colors.renamed),
-            Some(FileStatus::Untracked) => ("? ", colors.untracked),
-            Some(FileStatus::Staged) => ("S ", colors.staged),
-            Some(FileStatus::StagedModified) => ("± ", colors.staged_modified),
-            None => ("  ", Color::Reset),
-        };
+        let (icon, icon_color) = status_icon_and_color(item.status, colors);
         spans.push(Span::styled(
             icon.to_string(),
             Style::default().fg(icon_color),
@@ -148,13 +147,13 @@ fn render_horizontal_item(item: &HorizontalItem, colors: &ColorConfig) -> Vec<Sp
     } else if item.is_on_path {
         // On path but not selected: bold + underlined for visibility
         Style::default()
-            .fg(colors.folder)
+            .fg(colors.accent)
             .add_modifier(Modifier::BOLD)
             .add_modifier(Modifier::UNDERLINED)
     } else if item.is_dir {
-        // Directory not on path: folder color, dimmed
+        // Directory not on path: accent color, dimmed
         Style::default()
-            .fg(colors.folder)
+            .fg(colors.accent)
             .add_modifier(Modifier::DIM)
     } else {
         // Regular file: dimmed
