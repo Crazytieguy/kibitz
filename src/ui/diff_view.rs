@@ -1,9 +1,10 @@
-use crate::model::{CommitInfo, DiffState};
+use crate::model::{CommitInfo, DiffState, STICKY_FILE_HEADER_HEIGHT};
 use ratatui::{
     Frame,
     layout::Rect,
     style::{Color, Style},
-    widgets::{Block, Borders, Paragraph, Wrap},
+    text::{Line, Text},
+    widgets::{Block, Borders, Clear, Paragraph, Wrap},
 };
 
 pub fn render(frame: &mut Frame, area: Rect, state: &DiffState, commit: Option<&CommitInfo>) {
@@ -26,12 +27,40 @@ pub fn render(frame: &mut Frame, area: Rect, state: &DiffState, commit: Option<&
 
     let inner_area = block.inner(area);
 
+    // Check if we need sticky headers
+    let sticky_file_header = state.sticky_file_header();
+    let sticky_hunk_header = state.sticky_hunk_header();
+
+    // Convert logical scroll offset to visual offset accounting for wrapped lines
+    let visual_offset = visual_scroll_offset(
+        &state.content,
+        state.scroll_offset,
+        inner_area.width as usize,
+    );
+
     let paragraph = Paragraph::new(state.content.clone())
         .block(block)
         .wrap(Wrap { trim: false })
-        .scroll((state.scroll_offset as u16, 0));
+        .scroll((visual_offset as u16, 0));
 
     frame.render_widget(paragraph, area);
+
+    // Render sticky file header if needed (file name + divider = 2 lines)
+    if let Some(header_pos) = sticky_file_header {
+        let line_indices = [header_pos, header_pos + 1];
+        render_sticky_header(frame, &state.content, &line_indices, inner_area, 0);
+    }
+
+    // Render sticky hunk header if needed (box top + marker + box bottom = 3 lines)
+    if let Some(hunk_pos) = sticky_hunk_header {
+        let y_offset = if sticky_file_header.is_some() {
+            STICKY_FILE_HEADER_HEIGHT as u16
+        } else {
+            0
+        };
+        let line_indices = [hunk_pos - 1, hunk_pos, hunk_pos + 1];
+        render_sticky_header(frame, &state.content, &line_indices, inner_area, y_offset);
+    }
 
     // Draw scrollbar indicator if content is longer than view
     if state.total_lines > inner_area.height as usize {
@@ -81,4 +110,53 @@ fn truncate_message(msg: &str, max_len: usize) -> String {
     } else {
         msg.to_string()
     }
+}
+
+/// Calculate how many visual rows a single logical line occupies when wrapped.
+fn visual_line_count(line: &Line, width: usize) -> usize {
+    if width == 0 {
+        return 1;
+    }
+    let len: usize = line.spans.iter().map(|s| s.content.chars().count()).sum();
+    if len == 0 { 1 } else { len.div_ceil(width) }
+}
+
+/// Calculate the visual scroll offset by summing up visual rows for all lines
+/// up to the logical scroll offset.
+fn visual_scroll_offset(content: &Text, logical_offset: usize, width: usize) -> usize {
+    content
+        .lines
+        .iter()
+        .take(logical_offset)
+        .map(|line| visual_line_count(line, width))
+        .sum()
+}
+
+/// Render a sticky header by extracting lines at the given indices and displaying them
+/// at the specified y_offset within inner_area.
+fn render_sticky_header(
+    frame: &mut Frame,
+    content: &Text<'static>,
+    line_indices: &[usize],
+    inner_area: Rect,
+    y_offset: u16,
+) {
+    let sticky_lines: Vec<_> = line_indices
+        .iter()
+        .filter_map(|&idx| content.lines.get(idx).cloned())
+        .collect();
+
+    if sticky_lines.is_empty() {
+        return;
+    }
+
+    let sticky_area = Rect {
+        x: inner_area.x,
+        y: inner_area.y + y_offset,
+        width: inner_area.width,
+        height: sticky_lines.len() as u16,
+    };
+
+    frame.render_widget(Clear, sticky_area);
+    frame.render_widget(Paragraph::new(Text::from(sticky_lines)), sticky_area);
 }

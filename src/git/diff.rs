@@ -48,22 +48,94 @@ fn get_diff_sync(req: &DiffRequest) -> Result<DiffState> {
     run_diff_command(&req.repo_path, &diff_cmd, req.width, has_both, req.staged)
 }
 
-/// Find hunk positions in delta output by looking for file headers (Δ) or hunk markers (•)
-fn find_hunk_positions(content: &Text) -> Vec<usize> {
+/// Try to extract a file name from a delta file header line.
+/// Handles formats: "Δ filename", "added: filename", "removed: filename", "renamed: old → new"
+fn extract_file_name(line: &str) -> Option<String> {
+    let trimmed = line.trim_start();
+
+    if trimmed.starts_with('Δ') {
+        Some(trimmed.trim_start_matches('Δ').trim().to_string())
+    } else if let Some(rest) = trimmed.strip_prefix("added:") {
+        Some(rest.trim().to_string())
+    } else if let Some(rest) = trimmed.strip_prefix("removed:") {
+        Some(rest.trim().to_string())
+    } else if let Some(rest) = trimmed.strip_prefix("renamed:") {
+        // Format is "old → new", extract the new name
+        if let Some(arrow_pos) = rest.find('→') {
+            Some(rest[arrow_pos + '→'.len_utf8()..].trim().to_string())
+        } else {
+            Some(rest.trim().to_string())
+        }
+    } else {
+        None
+    }
+}
+
+/// Result of parsing delta output for hunk navigation
+struct HunkParseResult {
+    positions: Vec<usize>,             // Navigation targets for J/K
+    file_header_positions: Vec<usize>, // File header lines (Δ, added:, etc.)
+    hunk_marker_positions: Vec<usize>, // Hunk marker lines (•)
+}
+
+/// Find hunk positions in delta output by looking for hunk markers (•)
+/// For the first hunk in each file, we use the file header position instead
+/// so the user sees the file context when navigating.
+/// For subsequent hunks, we back up to the box top line (───) to show the full header.
+fn find_hunk_positions(content: &Text) -> HunkParseResult {
     let mut positions = Vec::new();
+    let mut file_header_positions = Vec::new();
+    let mut hunk_marker_positions = Vec::new();
+    let mut last_file_header_pos: Option<usize> = None;
+    let mut used_file_header = false;
 
     for (i, line) in content.lines.iter().enumerate() {
-        // Get the raw text content of the line
         let text: String = line.spans.iter().map(|s| s.content.as_ref()).collect();
-        let trimmed = text.trim_start();
 
-        // Delta uses "Δ" (U+0394) for file headers and "•" (U+2022) for hunk markers
-        if trimmed.starts_with('Δ') || trimmed.starts_with('•') {
-            positions.push(i);
+        if extract_file_name(&text).is_some() {
+            // Track file header position
+            last_file_header_pos = Some(i);
+            file_header_positions.push(i);
+            used_file_header = false;
+        } else if text.trim_start().starts_with('•') {
+            // Track the actual hunk marker position for sticky headers
+            hunk_marker_positions.push(i);
+
+            // For first hunk after a file header, use the file header position
+            if !used_file_header {
+                if let Some(header_pos) = last_file_header_pos {
+                    positions.push(header_pos);
+                    used_file_header = true;
+                } else {
+                    positions.push(i);
+                }
+            } else {
+                // For subsequent hunks, back up to show the box top line (───)
+                // The line before • should be the box top
+                let hunk_pos = if i > 0 {
+                    let prev_text: String = content.lines[i - 1]
+                        .spans
+                        .iter()
+                        .map(|s| s.content.as_ref())
+                        .collect();
+                    if prev_text.trim_start().starts_with('─') {
+                        i - 1
+                    } else {
+                        i
+                    }
+                } else {
+                    i
+                };
+                positions.push(hunk_pos);
+            }
         }
     }
 
-    positions
+    HunkParseResult {
+        positions,
+        file_header_positions,
+        hunk_marker_positions,
+    }
 }
 
 fn build_diff_command(req: &DiffRequest) -> String {
@@ -184,12 +256,14 @@ fn run_diff_command(
 
     let content = output.stdout.into_text().unwrap_or_default();
     let total_lines = content.lines.len();
-    let hunk_positions = find_hunk_positions(&content);
+    let parsed = find_hunk_positions(&content);
 
     Ok(DiffState {
         content,
         scroll_offset: 0,
-        hunk_positions,
+        hunk_positions: parsed.positions,
+        file_header_positions: parsed.file_header_positions,
+        hunk_marker_positions: parsed.hunk_marker_positions,
         current_hunk: 0,
         total_lines,
         has_both,
